@@ -1,0 +1,79 @@
+.fc-button {
+    background-color: white !important;
+    color: black !important; 
+    border-radius: 5px !important; 
+    padding: 5px 20px !important; 
+    border-color: black !important;
+    border-width:  1.5px !important;
+    border-style: solid !important;
+    margin-right: 10px !important;
+    margin-top: 30px !important;
+}
+.fc-button:hover {
+    background-color: #5a0c9d !important;
+    color: white !important; 
+}
+.fc-button-active {
+    background-color: #7d57fc !important;
+    color: white !important; 
+}
+.fc-toolbar-title {
+    font-size: 1.2rem !important; 
+    margin-left: -50% !important;
+    margin-bottom: 20px !important;
+}
+tr .fc-col-header-cell{
+    background-color: #7d57fc !important;
+    color: white !important; 
+    overflow: auto;
+}
+.fc-daygrid-day {
+    border: 1px solid black !important; 
+}
+table {
+    border-collapse: collapse; 
+    width: 100%; 
+    border-radius: 5px !important; 
+}
+table, th, td {
+    border: 1px solid black !important;
+}
+.fc-day-other {
+    background-color: #e9e9e9 !important; 
+}
+th.fc-timegrid-axis {
+    background-color: #7d57fc !important;
+}
+.fc-daygrid-event-harness {
+    padding: 2px;
+    margin-bottom: 1%;
+}
+.fc-event-main {
+    overflow-y: auto;
+}
+::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+    height: 8px; /* Height of the scrollbar */
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #7d57fc; /* Color of the scrollbar thumb */
+    border-radius: 10px; /* Rounded corners for the scrollbar thumb */
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Background color of the scrollbar track */
+    border-radius: 10px; /* Rounded corners for the scrollbar track */
+}
+
+/* Hide the scrollbar arrows */
+::-webkit-scrollbar-button {
+    display: none; /* Hides the arrows */
+}
+
+/* Thin scroll bars for Firefox */
+* {
+    scrollbar-width: thin; /* Use thin scrollbars */
+    scrollbar-color: #7d57fc #f1f1f1; /* Thumb color and track color */
+}
+  
