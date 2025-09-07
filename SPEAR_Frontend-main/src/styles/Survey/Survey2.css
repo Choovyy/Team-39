@@ -1,0 +1,259 @@
+/* Survey2 Styles - mirrors Survey1 look but with title on top */
+.survey2-container {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  overflow: hidden;
+}
+
+.survey2-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+.survey2-content {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 900px;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.survey2-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #f5b47e;
+  margin: 0 0 8px 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.survey2-subtitle {
+  color: #E5E7EB;
+  margin: 0 0 24px 0;
+}
+
+.skills-card {
+  width: 100%;
+  background: #333c46;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(245, 180, 126, 0.3);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.card-title {
+  text-align: center;
+  color: #f5b47e;
+  margin: 0 0 6px 0;
+}
+
+.card-instruction {
+  text-align: center;
+  color: #9CA3AF;
+  margin: 0 0 16px 0;
+}
+
+.skills-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: auto;
+  gap: 12px 20px;
+  align-items: start;
+}
+
+.skill-item {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(245, 180, 126, 0.25);
+  border-radius: 12px;
+  padding: 12px;
+  min-height: fit-content;
+  display: flex;
+  flex-direction: column;
+}
+
+.skill-item.selected {
+  border-color: #f5b47e;
+}
+
+.skill-header {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: #F3F4F6;
+  min-height: 24px;
+  flex-shrink: 0;
+}
+
+.other-skill-block {
+  margin-top: 14px;
+}
+
+.skill-mastery {
+  margin-top: 10px;
+  text-align: left;
+}
+
+.battery {
+  width: 160px;
+  height: 28px;
+  border: 3px solid #f5b47e;
+  border-radius: 6px;
+  position: relative;
+  background: rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.battery::after {
+  content: '';
+  position: absolute;
+  right: -7px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 14px;
+  background: #f5b47e;
+  border-radius: 0 3px 3px 0;
+}
+
+.battery-level {
+  height: 100%;
+  background: linear-gradient(90deg, #EF4444 0%, #F59E0B 50%, #10B981 100%);
+  transition: width 0.3s ease;
+  border-radius: 3px;
+}
+
+.mastery-percentage {
+  color: #F3F4F6;
+  margin-left: 10px;
+  font-weight: 600;
+  display: inline-block;
+  width: 44px;
+}
+
+.skill-mastery input[type="range"] {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.mastery-labels {
+  display: flex;
+  justify-content: space-between;
+  color: #9CA3AF;
+  font-size: 0.8rem;
+}
+
+.other-skill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.other-skill label {
+  color: #F3F4F6;
+}
+
+.other-skill input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: white;
+}
+
+.other-input-row {
+  margin-top: 16px;
+}
+
+.other-input-row input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(245, 180, 126, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: white;
+}
+
+.actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.back-button,
+.next-button {
+  width: 180px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-button {
+  background: transparent;
+  border: 1px solid rgba(245, 180, 126, 0.6);
+  color: #f5b47e;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  border-color: #f5b47e;
+  color: #ffffff;
+  background: rgba(245, 180, 126, 0.1);
+}
+
+.next-button {
+  background: linear-gradient(135deg, #f5b47e, #e6a366);
+  border: none;
+  border-radius: 12px;
+  color: #333c46;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.next-button.disabled {
+  background: rgba(107, 114, 128, 0.5);
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .skills-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .survey2-title {
+    font-size: 2.2rem;
+  }
+}

@@ -42,7 +42,7 @@ const Login = () => {
       const data = response.data;
       if (!data || !data.token || !data.role) throw new Error("Invalid Credentials.");
       login(data.token, data.role, data.refreshToken, data.uid);
-      if (data.role === "STUDENT") navigate("/student-dashboard");
+      if (data.role === "STUDENT") navigate("/survey");
       else if (data.role === "TEACHER") navigate("/teacher-dashboard");
       else if (data.role === "ADMIN") navigate("/admin-dashboard");
       else throw new Error("Invalid user role.");

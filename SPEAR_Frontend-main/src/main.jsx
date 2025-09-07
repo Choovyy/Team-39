@@ -48,12 +48,48 @@ import AdminQuestionTemplates from "./pages/Admin/AdminQuestionTemplates";
 import StudentTeacherEvaluation from "./pages/Student/Evaluation/StudentTeacherEvaluation";
 import StudentTeacherStatus from "./pages/Student/Evaluation/StudentTeacherStatus";
 import TeacherAdvisoryRequest from "./pages/Teacher/Teams/TeacherAdvisoryRequest";
+import SurveyPage from "./pages/Survey/SurveyPage";
+import Survey1 from "./pages/Survey/Survey1";
+import Survey2 from "./pages/Survey/Survey2";
+import Survey3 from "./pages/Survey/Survey3";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <SelectionPage />, // Show selection page first
     errorElement: <ErrorPage />,
+  },
+  {
+    path: "/survey",
+    element: (
+      <PrivateRoute requiredRoles={["STUDENT"]}>
+        <SurveyPage />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/survey1",
+    element: (
+      <PrivateRoute requiredRoles={["STUDENT"]}>
+        <Survey1 />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/survey2",
+    element: (
+      <PrivateRoute requiredRoles={["STUDENT"]}>
+        <Survey2 />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/survey3",
+    element: (
+      <PrivateRoute requiredRoles={["STUDENT"]}>
+        <Survey3 />
+      </PrivateRoute>
+    ),
   },
   {
     path: "/landing",
