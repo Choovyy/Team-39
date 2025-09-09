@@ -1,5 +1,6 @@
 package com.group2.SPEAR_Backend.Model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -33,6 +34,15 @@ public class User implements UserDetails {
     @Column(name = "role", nullable = false)
     private String role = "TEACHER";
 
+    //CapstoneConnect
+    // Flag to track if it's the user's first time
+    @Column(nullable = false)
+    private boolean firstTimeUser;
+
+    @OneToOne(mappedBy = "user")
+    @JsonManagedReference(value = "profile-user")
+    private ProfileEntity profile;
+
 
     private String interests;
 
@@ -43,7 +53,14 @@ public class User implements UserDetails {
     @ManyToMany(mappedBy = "enrolledStudents", cascade = CascadeType.MERGE)
     private Set<Classes> enrolledClasses = new HashSet<>();
 
-    public User(int uid, String firstname, String lastname, String email, String password, String role, Boolean isDeleted, String interests, String department) {
+    //CapstoneConnect
+
+    public User() {
+        // Default constructor
+        this.firstTimeUser = true; // Assuming new users are first time by default
+    }
+
+    public User(int uid, String firstname, String lastname, String email, String password, String role, Boolean isDeleted, String interests, String department, boolean firstTimeUser) {
         this.uid = uid;
         this.firstname = firstname;
         this.lastname = lastname;
@@ -53,9 +70,10 @@ public class User implements UserDetails {
         this.isDeleted = isDeleted;
         this.interests = this.role.equals("TEACHER") ? interests : "N/A";
         this.department = this.role.equals("TEACHER") ? department : "N/A";
+        this.firstTimeUser = firstTimeUser;
     }
 
-    public User(String firstname, String lastname, String email, String password, String role, Boolean isDeleted, String interests, String department) {
+    public User(String firstname, String lastname, String email, String password, String role, Boolean isDeleted, String interests, String department, boolean firstTimeUser) {
         this.firstname = firstname;
         this.lastname = lastname;
         this.email = email;
@@ -64,9 +82,10 @@ public class User implements UserDetails {
         this.isDeleted = isDeleted;
         this.interests = this.role.equals("TEACHER") ? interests : "N/A";
         this.department = this.role.equals("TEACHER") ? department : "N/A";
+        this.firstTimeUser = firstTimeUser;
     }
 
-    public User() {}
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -198,4 +217,29 @@ public class User implements UserDetails {
             this.department = "N/A";
         }
     }
+
+    //CC
+    @Transient
+    public String getFullName() {
+        return (firstname != null ? firstname : "") + " " + (lastname != null ? lastname : "");
+    }
+
+
+    public boolean isFirstTimeUser() {
+        return firstTimeUser;
+    }
+    public void setFirstTimeUser(boolean firstTimeUser) {
+        this.firstTimeUser = firstTimeUser;
+    }
+
+
+    public ProfileEntity getProfile() {
+        return profile;
+    }
+
+    public void setProfile(ProfileEntity profile) {
+        this.profile = profile;
+    }
+
+
 }

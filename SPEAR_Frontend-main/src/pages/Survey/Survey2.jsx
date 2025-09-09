@@ -27,39 +27,31 @@ const Survey2 = () => {
 
   // Load saved data on component mount
   useEffect(() => {
-    const savedData = localStorage.getItem('survey2Data');
-    if (savedData) {
-      try {
-        const data = JSON.parse(savedData);
-        if (data.selections && Array.isArray(data.selections)) {
-          // Reset all skills first
-          const newSelectedSkills = SKILLS.reduce((acc, skill) => {
-            acc[skill] = { selected: false, level: 0 };
-            return acc;
-          }, {});
+  const savedData = JSON.parse(localStorage.getItem('surveyData') || '{}');
 
-          // Restore saved selections
-          data.selections.forEach(selection => {
-            if (SKILLS.includes(selection.skill)) {
-              newSelectedSkills[selection.skill] = {
-                selected: true,
-                level: selection.masteryLevel || 0
-              };
-            } else {
-              // It's a custom skill
-              setOtherSkill(selection.skill);
-              setOtherSkillLevel(selection.masteryLevel || 0);
-              setOtherSelected(true);
-            }
-          });
+  if (savedData.step2 && savedData.step2.selections) {
+    const newSelectedSkills = SKILLS.reduce((acc, skill) => {
+      acc[skill] = { selected: false, level: 0 };
+      return acc;
+    }, {});
 
-          setSelectedSkills(newSelectedSkills);
-        }
-      } catch (error) {
-        console.error('Error loading survey2 data:', error);
+    savedData.step2.selections.forEach(selection => {
+      if (SKILLS.includes(selection.skill)) {
+        newSelectedSkills[selection.skill] = {
+          selected: true,
+          level: selection.masteryLevel || 0
+        };
+      } else {
+        setOtherSkill(selection.skill);
+        setOtherSkillLevel(selection.masteryLevel || 0);
+        setOtherSelected(true);
       }
-    }
-  }, []);
+    });
+
+    setSelectedSkills(newSelectedSkills);
+  }
+}, []);
+
 
   const hasAnySelection = useMemo(() => {
     const anyPreset = Object.values(selectedSkills).some((s) => s.selected && s.level > 0);
@@ -82,22 +74,30 @@ const Survey2 = () => {
   };
 
   const handleNext = () => {
-    if (!hasAnySelection) return;
+  if (!hasAnySelection) return;
 
-    const selections = [];
-    SKILLS.forEach((skill) => {
-      const s = selectedSkills[skill];
-      if (s.selected && s.level > 0) {
-        selections.push({ skill, masteryLevel: s.level });
-      }
-    });
-    if (otherSelected && otherSkill.trim() && otherSkillLevel > 0) {
-      selections.push({ skill: otherSkill.trim(), masteryLevel: otherSkillLevel });
+  const selections = [];
+  SKILLS.forEach((skill) => {
+    const s = selectedSkills[skill];
+    if (s.selected && s.level > 0) {
+      selections.push({ skill, masteryLevel: s.level });
     }
+  });
+  if (otherSelected && otherSkill.trim() && otherSkillLevel > 0) {
+    selections.push({ skill: otherSkill.trim(), masteryLevel: otherSkillLevel });
+  }
 
-    localStorage.setItem('survey2Data', JSON.stringify({ selections }));
-    navigate('/survey3');
-  };
+  // Load previous survey data
+  const allSurveyData = JSON.parse(localStorage.getItem('surveyData') || '{}');
+
+  // Save current step (step2) data
+  allSurveyData.step2 = { selections };
+
+  // Save everything together
+  localStorage.setItem('surveyData', JSON.stringify(allSurveyData));
+
+  navigate('/survey3');
+};
 
   return (
     <div className="survey2-container">

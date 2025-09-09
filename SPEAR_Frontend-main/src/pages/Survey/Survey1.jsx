@@ -75,17 +75,23 @@ const Survey1 = () => {
   };
 
   const handleNext = () => {
-    if (selectedRole) {
-      // Store the survey data (you can use context or localStorage)
-      const surveyData = {
-        preferredRole: selectedRole === 'Other' ? otherRole : selectedRole,
-      };
-      localStorage.setItem('survey1Data', JSON.stringify(surveyData));
-      
-      // Navigate to next survey page
-      navigate('/survey2');
-    }
+  if (!selectedRole) return;
+
+  // Load previous survey data (if any)
+  const allSurveyData = JSON.parse(localStorage.getItem('surveyData') || '{}');
+
+  // Add/update current step
+  allSurveyData.step1 = {
+    preferredRole: selectedRole === 'Other' ? otherRole : selectedRole,
   };
+
+  // Save combined survey data
+  localStorage.setItem('surveyData', JSON.stringify(allSurveyData));
+
+  // Navigate to next survey page
+  navigate('/survey2');
+};
+
 
   const isNextDisabled = !selectedRole || (selectedRole === 'Other' && !otherRole.trim());
 

@@ -166,6 +166,7 @@ public class UserService implements UserDetailsService {
             response.setExpirationTime("24Hrs");
             response.setMessage("Successfully Logged In");
             response.setUid(user.getUid());
+            response.setFirstTimeUser(user.isFirstTimeUser()); // 👈 pass to frontend
 
         } catch (RuntimeException e) {
             response.setStatusCode(404);

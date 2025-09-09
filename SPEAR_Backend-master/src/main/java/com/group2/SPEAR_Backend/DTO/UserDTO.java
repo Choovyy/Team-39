@@ -25,6 +25,7 @@ public class UserDTO {
     private Integer uid;
     private String interests;
     private String department;
+    private Boolean firstTimeUser;
 
     // Constructor with role normalization
     public UserDTO(int statusCode, String message, String firstname, String lastname, String email, String role, Integer uid, String interests, String department) {
@@ -246,4 +247,14 @@ public class UserDTO {
             this.department = department;
         }
     }
+
+    public Boolean getFirstTimeUser() {
+        return firstTimeUser;
+    }
+
+    public void setFirstTimeUser(Boolean firstTimeUser) {
+        this.firstTimeUser = firstTimeUser;
+    }
+
+
 }
