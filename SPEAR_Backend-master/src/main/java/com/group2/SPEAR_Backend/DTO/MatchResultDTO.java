@@ -2,25 +2,29 @@ package com.group2.SPEAR_Backend.DTO;
 
 
 import java.util.List;
+import com.group2.SPEAR_Backend.DTO.TechnicalSkillDTO;
 
 public class MatchResultDTO {
     private String name;
-    private List<String> technicalSkills;
+    private List<TechnicalSkillDTO> technicalSkills;
     private List<String> preferredRoles;
     private List<String> projectInterests;
-    private String personality;    private double overallScore;  // compatibility score
+    private String personality;
+    private double overallScore;  // compatibility score
     private double skillScore;    // score based on technical skills
     private double personalityScore; // score based on personality
     private double projectInterestScore; // score based on matching project interests
     private String profilePicture; // URL of the user's profile picture
 
-    public MatchResultDTO() {}    public MatchResultDTO(String name, List<String> technicalSkills, List<String> preferredRoles,
-                                                        List<String> projectInterests, String personality, double overallScore,
-                                                        double skillScore, double personalityScore, double projectInterestScore, String profilePicture) {
+    public MatchResultDTO() {}
+    public MatchResultDTO(String name, List<TechnicalSkillDTO> technicalSkills, List<String> preferredRoles,
+                         List<String> projectInterests, String personality, double overallScore,
+                         double skillScore, double personalityScore, double projectInterestScore, String profilePicture) {
         this.name = name;
         this.technicalSkills = technicalSkills;
         this.preferredRoles = preferredRoles;
-        this.projectInterests = projectInterests;        this.personality = personality;
+        this.projectInterests = projectInterests;
+        this.personality = personality;
         this.overallScore = overallScore;
         this.skillScore = skillScore;
         this.personalityScore = personalityScore;
@@ -37,11 +41,11 @@ public class MatchResultDTO {
         this.name = name;
     }
 
-    public List<String> getTechnicalSkills() {
+    public List<TechnicalSkillDTO> getTechnicalSkills() {
         return technicalSkills;
     }
 
-    public void setTechnicalSkills(List<String> technicalSkills) {
+    public void setTechnicalSkills(List<TechnicalSkillDTO> technicalSkills) {
         this.technicalSkills = technicalSkills;
     }
 

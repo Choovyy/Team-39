@@ -52,6 +52,8 @@ import SurveyPage from "./pages/Survey/SurveyPage";
 import Survey1 from "./pages/Survey/Survey1";
 import Survey2 from "./pages/Survey/Survey2";
 import Survey3 from "./pages/Survey/Survey3";
+import PersonalityTest from "./pages/Survey/PersonalityTest";
+import Dashboard from "./pages/Student/Dashboard/Dashboard";
 
 const router = createBrowserRouter([
   {
@@ -92,6 +94,14 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/personality-test",
+    element: (
+      <PrivateRoute requiredRoles={["STUDENT"]}>
+        <PersonalityTest />
+      </PrivateRoute>
+    ),
+  },
+  {
     path: "/landing",
     element: <LandingPage />,
   },
@@ -110,6 +120,14 @@ const router = createBrowserRouter([
     element: (
       <PrivateRoute requiredRoles={["STUDENT"]}>
         <StudentDashboard />
+      </PrivateRoute>
+    ),
+  },
+  {
+    path: "/student-ai-dashboard",
+    element: (
+      <PrivateRoute requiredRoles={["STUDENT"]}>
+        <Dashboard />
       </PrivateRoute>
     ),
   },

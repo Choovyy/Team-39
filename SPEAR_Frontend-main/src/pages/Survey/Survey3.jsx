@@ -1,8 +1,9 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AuthContext from '../../services/AuthContext';
+import axios from 'axios';
 import people from '../../assets/imgs/people.png';
 import '../../styles/Survey/Survey3.css';
-import axios from 'axios';
 
 const PROJECTS = [
   'Web Applications',
@@ -15,6 +16,24 @@ const PROJECTS = [
 
 const Survey3 = () => {
   const navigate = useNavigate();
+  const { authState } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (authState?.isAuthenticated && authState?.role === "STUDENT" && authState?.uid) {
+      const address = window.location.hostname;
+      axios.get(`http://${address}:8080/user/profile/${authState.uid}`)
+        .then(resp => {
+          if (resp.data && resp.data.firstTimeUser === false) {
+            navigate("/student-ai-dashboard");
+          }
+        })
+        .catch(err => {
+          if (err.response?.status && err.response.status !== 404) {
+            console.error("User profile check error:", err);
+          }
+        });
+    }
+  }, [authState, navigate]);
   const [selected, setSelected] = useState(() => PROJECTS.reduce((a, p) => ({ ...a, [p]: false }), {}));
   const [loading, setLoading] = useState(false);
 
@@ -42,54 +61,13 @@ const Survey3 = () => {
 
   const toggle = (project) => setSelected((prev) => ({ ...prev, [project]: !prev[project] }));
 
-  const handleNext = async () => {
+  const handleNext = () => {
     if (!hasAny) return;
-
     // Save Survey3 step locally
     const picks = PROJECTS.filter((p) => selected[p]).map((p) => ({ name: p }));
     localStorage.setItem('survey3Data', JSON.stringify({ interests: picks }));
-
-    // Combine all survey steps
-    const allData = JSON.parse(localStorage.getItem('surveyData') || '{}');
-    const step1 = allData.step1 || {};
-    const step2 = allData.step2 || {};
-    const step3 = { projectInterests: picks.map(p => p.name) };
-
-    // Transform technical skills to string array
-    const technicalSkills = (step2.selections || []).map(s => ({
-      skill: s.skill,
-      masteryLevel: s.masteryLevel || 1 // default to 1 if not provided
-    }));
-
-// Build SurveyDTO for backend
-    const surveyDTO = {
-      preferredRoles: [step1.preferredRole].filter(Boolean),
-      technicalSkills: technicalSkills,   // ✅ now objects not strings
-      projectInterests: step3.projectInterests,
-      personality: "Unknown"
-    };
-
-    setLoading(true);
-    try {
-      // Send to backend (replace with your actual API URL)
-      const userId = 2; // Replace with actual user ID (from auth context or JWT)
-      console.log("📦 Survey Payload:", JSON.stringify(surveyDTO, null, 2));
-
-       await axios.post(`http://localhost:8080/api/survey/save/${userId}`, surveyDTO);
-      console.log('✅ Survey saved successfully');
-      
-      // Optionally clear localStorage
-      localStorage.removeItem('surveyData');
-      localStorage.removeItem('survey3Data');
-
-      // Navigate to dashboard or next page
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('❌ Failed to save survey:', error);
-      alert('Failed to save survey. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    // Proceed to personality test, survey will be saved after personality
+    navigate('/personality-test');
   };
 
   return (
@@ -123,7 +101,7 @@ const Survey3 = () => {
                 disabled={!hasAny || loading} 
                 onClick={handleNext}
               >
-                {loading ? 'Saving...' : 'Finish'}
+                {loading ? 'Saving...' : 'Next'}
               </button>
             </div>
           </div>

@@ -77,8 +77,7 @@ private SurveyRepository surveyRepository;
         updateUserFirstTimeFlag(user);
 
         // Send survey data to matching service
-        //for testing
-        //sendSurveyToMatchingService(user, savedSurvey.toDTO());
+        sendSurveyToMatchingService(user, savedSurvey.toDTO());
 
         return savedSurvey.toDTO();
     }
@@ -101,10 +100,8 @@ private SurveyRepository surveyRepository;
         updateUserFirstTimeFlag(profile.getUser());
 
         // Send updated survey data to matching service
-
-        //commented for testing
-        //sendSurveyToMatchingService(profile.getUser(), savedSurvey.toDTO());
-
+        // Send updated survey data to matching service
+        sendSurveyToMatchingService(profile.getUser(), savedSurvey.toDTO());
         return savedSurvey.toDTO();
     }    private void applySurveyDTOToEntity(SurveyDTO dto, SurveyEntity entity) {
         if (dto.getTechnicalSkills() != null) {
@@ -280,6 +277,22 @@ private SurveyRepository surveyRepository;
             e.printStackTrace(); // Added for more detailed debugging
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Matching service unavailable: " + e.getMessage());
         }
+    }
+
+    // Persist personality summary onto existing survey for a user
+    public SurveyDTO applyPersonalityToUser(Integer userId, String personalitySummary) {
+        if(personalitySummary == null || personalitySummary.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Personality summary is empty");
+        }
+        ProfileEntity profile = profileRepository.findByUser_Uid(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found for user"));
+        SurveyEntity survey = profile.getSurvey();
+        if(survey == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Survey must be created before applying personality");
+        }
+        survey.setPersonality(personalitySummary);
+        surveyRepository.save(survey);
+        return survey.toDTO();
     }
 
 

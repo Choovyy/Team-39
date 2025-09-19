@@ -1,5 +1,7 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import AuthContext from '../../services/AuthContext';
+import axios from 'axios';
 import people from '../../assets/imgs/people.png';
 import '../../styles/Survey/Survey2.css';
 
@@ -14,6 +16,24 @@ const SKILLS = [
 
 const Survey2 = () => {
   const navigate = useNavigate();
+  const { authState } = useContext(AuthContext);
+
+  useEffect(() => {
+    if (authState?.isAuthenticated && authState?.role === "STUDENT" && authState?.uid) {
+      const address = window.location.hostname;
+      axios.get(`http://${address}:8080/user/profile/${authState.uid}`)
+        .then(resp => {
+          if (resp.data && resp.data.firstTimeUser === false) {
+            navigate("/student-ai-dashboard");
+          }
+        })
+        .catch(err => {
+          if (err.response?.status && err.response.status !== 404) {
+            console.error("User profile check error:", err);
+          }
+        });
+    }
+  }, [authState, navigate]);
 
   const [selectedSkills, setSelectedSkills] = useState(() => {
     return SKILLS.reduce((acc, skill) => {
