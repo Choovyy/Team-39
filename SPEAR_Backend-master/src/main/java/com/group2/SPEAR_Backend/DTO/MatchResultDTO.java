@@ -2,8 +2,9 @@ package com.group2.SPEAR_Backend.DTO;
 
 
 import java.util.List;
-import com.group2.SPEAR_Backend.DTO.TechnicalSkillDTO;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MatchResultDTO {
     private String name;
     private List<TechnicalSkillDTO> technicalSkills;
@@ -14,6 +15,7 @@ public class MatchResultDTO {
     private double skillScore;    // score based on technical skills
     private double personalityScore; // score based on personality
     private double projectInterestScore; // score based on matching project interests
+    private double preferredRolesScore; // score based on preferred roles (new field from AI service)
     private String profilePicture; // URL of the user's profile picture
 
     public MatchResultDTO() {}
@@ -99,6 +101,14 @@ public class MatchResultDTO {
 
     public void setProjectInterestScore(double projectInterestScore) {
         this.projectInterestScore = projectInterestScore;
+    }
+
+    public double getPreferredRolesScore() {
+        return preferredRolesScore;
+    }
+
+    public void setPreferredRolesScore(double preferredRolesScore) {
+        this.preferredRolesScore = preferredRolesScore;
     }
 
     public String getProfilePicture() {

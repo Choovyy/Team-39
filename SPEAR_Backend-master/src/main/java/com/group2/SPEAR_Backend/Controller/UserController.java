@@ -84,6 +84,20 @@ public class UserController {
         }
     }
 
+    // Lightweight endpoint to check only the first-time flag
+    @GetMapping("/user/{userId}/first-time")
+    public ResponseEntity<Map<String, Object>> isFirstTimeUser(@PathVariable Integer userId) {
+        UserDTO userProfile = uServ.getProfileById(userId);
+        if (userProfile != null && userProfile.getStatusCode() == 200) {
+            Boolean first = userProfile.getFirstTimeUser();
+            return ResponseEntity.ok(Map.of("firstTimeUser", first != null ? first : Boolean.TRUE));
+        } else {
+            int status = (userProfile != null ? userProfile.getStatusCode() : 404);
+            String msg = (userProfile != null ? userProfile.getMessage() : "User not found");
+            return ResponseEntity.status(status).body(Map.of("error", msg));
+        }
+    }
+
 
     @DeleteMapping("/admin/delete/{email}")
     public ResponseEntity<UserDTO> deleteUser(@PathVariable String email) {

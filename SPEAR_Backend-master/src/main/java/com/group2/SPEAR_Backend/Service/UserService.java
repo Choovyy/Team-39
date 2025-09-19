@@ -374,13 +374,23 @@ public class UserService implements UserDetailsService {
         try {
             User user = userRepo.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+            userDTO.setUid(user.getUid());
+            userDTO.setEmail(user.getEmail());
             userDTO.setFirstname(user.getFirstname());
             userDTO.setLastname(user.getLastname());
+            userDTO.setRole(user.getRole());
+            userDTO.setFirstTimeUser(user.isFirstTimeUser());
             userDTO.setStatusCode(200);
             userDTO.setMessage("User found successfully");
         } catch (Exception e) {
-            userDTO.setStatusCode(500);
-            userDTO.setMessage("Error occurred: " + e.getMessage());
+            // Return 404 for not found, 500 for other errors
+            if (e.getMessage() != null && e.getMessage().startsWith("User not found")) {
+                userDTO.setStatusCode(404);
+                userDTO.setMessage(e.getMessage());
+            } else {
+                userDTO.setStatusCode(500);
+                userDTO.setMessage("Error occurred: " + e.getMessage());
+            }
         }
         return userDTO;
     }

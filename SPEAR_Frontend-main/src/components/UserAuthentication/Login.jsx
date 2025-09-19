@@ -42,10 +42,26 @@ const Login = () => {
       const data = response.data;
       if (!data || !data.token || !data.role) throw new Error("Invalid Credentials.");
       login(data.token, data.role, data.refreshToken, data.uid);
-      if (data.role === "STUDENT") navigate("/survey");
-      else if (data.role === "TEACHER") navigate("/teacher-dashboard");
-      else if (data.role === "ADMIN") navigate("/admin-dashboard");
-      else throw new Error("Invalid user role.");
+
+      // Route by role, and for students, branch on firstTimeUser via lightweight endpoint
+      if (data.role === "STUDENT") {
+        try {
+          const res = await axios.get(`http://${address}:8080/user/${data.uid}/first-time`);
+          const isFirst = !!res.data?.firstTimeUser;
+          navigate(isFirst ? "/survey" : "/student-ai-dashboard");
+        } catch (e) {
+          // If endpoint not found or user not found, treat as first-time; otherwise default to dashboard
+          const s = e.response?.status;
+          console.error("First-time check failed after login:", e);
+          navigate(s === 404 ? "/survey" : "/student-ai-dashboard");
+        }
+      } else if (data.role === "TEACHER") {
+        navigate("/teacher-dashboard");
+      } else if (data.role === "ADMIN") {
+        navigate("/admin-dashboard");
+      } else {
+        throw new Error("Invalid user role.");
+      }
     } catch (err) {
       setError(err.message || "An unexpected error occurred. Please try again.");
     }

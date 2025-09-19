@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 @Service
 public class PersonalityService {
 
+    // reference: https://carolineadamscoaching.com/blog/how-to-use-personality-assessments-in-the-workplace
     private static class QDef { long id; String text; String axis; int direction; QDef(long id, String text, String axis, int direction){this.id=id;this.text=text;this.axis=axis;this.direction=direction;} }
 
     // Four axes
