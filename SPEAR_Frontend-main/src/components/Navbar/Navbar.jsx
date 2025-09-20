@@ -27,6 +27,7 @@ const Navbar = ({ userRole }) => {
       { label: "My Team Applications", path: "/student/team-applications", icon: teamapplication},
       { label: "Team Evaluations", path: "/student/evaluations", icon: teamIcon },
       { label: "Settings", path: "/student-settings", icon: settingsIcon },
+      { label: "My Matches", path: "/student-ai-dashboard", icon: userIcon },
       
     ],
     TEACHER: [

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import AuthContext from '../../../services/AuthContext';
 import LogoutButton from '../../../components/Auth/LogoutButton';
+import Navbar from '../../../components/Navbar/Navbar';
 
 /* Dashboard page: fetches AI match recommendations and displays them.
    It calls backend endpoint /api/survey/match with the student's survey answers (pulled from backend or local state TBD).
@@ -39,62 +40,65 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="flex items-start justify-between mb-4 gap-4 flex-wrap">
-        <h1 className="text-2xl font-bold text-teal">AI Match Recommendations</h1>
-        <LogoutButton />
-      </div>
-      {loading && <p className="text-gray-600">Loading matches...</p>}
-      {error && <div className="text-red-600 mb-4">{String(error)}</div>}
-      {!loading && matches?.length === 0 && !error && (
-        <p className="text-gray-500">No matches yet.</p>
-      )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {matches?.map((m, idx) => (
-          <div key={idx} className="border rounded-lg shadow-sm p-4 bg-white hover:shadow-md transition">
-            <div className="flex items-center gap-3 mb-2">
-              {m.profilePicture ? (
-                <img src={m.profilePicture} alt={m.name} className="w-12 h-12 rounded-full object-cover" />
-              ) : (
-                <div className="w-12 h-12 rounded-full bg-teal flex items-center justify-center text-white font-semibold">
-                  {m.name ? m.name.charAt(0).toUpperCase() : '?'}
+    <div className="grid grid-cols-1 md:grid-cols-[256px_1fr] min-h-screen">
+      <Navbar userRole={authState.role} />
+      <div className="main-content bg-white text-teal p-4 md:px-20 lg:px-28 pt-20 md:pt-12">
+        <div className="flex items-start justify-between mb-4 gap-4 flex-wrap">
+          <h1 className="text-2xl font-bold text-teal">AI Match Recommendations</h1>
+          <LogoutButton />
+        </div>
+        {loading && <p className="text-gray-600">Loading matches...</p>}
+        {error && <div className="text-red-600 mb-4">{String(error)}</div>}
+        {!loading && matches?.length === 0 && !error && (
+          <p className="text-gray-500">No matches yet.</p>
+        )}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {matches?.map((m, idx) => (
+            <div key={idx} className="border rounded-lg shadow-sm p-4 bg-white hover:shadow-md transition">
+              <div className="flex items-center gap-3 mb-2">
+                {m.profilePicture ? (
+                  <img src={m.profilePicture} alt={m.name} className="w-12 h-12 rounded-full object-cover" />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-teal flex items-center justify-center text-white font-semibold">
+                    {m.name ? m.name.charAt(0).toUpperCase() : '?'}
+                  </div>
+                )}
+                <div>
+                  <h2 className="font-semibold text-teal">{m.name || 'Unknown User'}</h2>
+                  <p className="text-sm text-gray-500">Overall Score: {m.overallScore?.toFixed?.(2) ?? 'N/A'}</p>
                 </div>
-              )}
-              <div>
-                <h2 className="font-semibold text-teal">{m.name || 'Unknown User'}</h2>
-                <p className="text-sm text-gray-500">Overall Score: {m.overallScore?.toFixed?.(2) ?? 'N/A'}</p>
+              </div>
+              <div className="text-sm space-y-1">
+                  <p><span className="font-medium">Personality:</span> {m.personality || 'No Personality'}</p>
+                  <p><span className="font-medium">Skills:</span> {
+                    Array.isArray(m.technicalSkills)
+                      ? m.technicalSkills.map(ts => typeof ts === 'object' && ts.skill ? ts.skill : ts).join(', ')
+                      : 'No Skills'
+                  }</p>
+                  <p><span className="font-medium">Roles:</span> {
+                    Array.isArray(m.preferredRoles)
+                      ? m.preferredRoles.map(r => typeof r === 'object' && r.role ? r.role : r).join(', ')
+                      : 'No Role'
+                  }</p>
+                  <p><span className="font-medium">Interests:</span> {
+                    Array.isArray(m.projectInterests)
+                      ? m.projectInterests.map(pi => typeof pi === 'object' && pi.name ? pi.name : pi).join(', ')
+                      : 'No Preferences'
+                  }</p>
+                <div className="grid grid-cols-2 gap-2 pt-2 text-xs text-gray-600">
+                  <div>Skill: {m.skillScore?.toFixed?.(2) ?? '—'}</div>
+                  <div>Personality: {m.personalityScore?.toFixed?.(2) ?? '—'}</div>
+                  <div>Interest: {m.projectInterestScore?.toFixed?.(2) ?? '—'}</div>
+                </div>
               </div>
             </div>
-            <div className="text-sm space-y-1">
-                <p><span className="font-medium">Personality:</span> {m.personality || 'No Personality'}</p>
-                <p><span className="font-medium">Skills:</span> {
-                  Array.isArray(m.technicalSkills)
-                    ? m.technicalSkills.map(ts => typeof ts === 'object' && ts.skill ? ts.skill : ts).join(', ')
-                    : 'No Skills'
-                }</p>
-                <p><span className="font-medium">Roles:</span> {
-                  Array.isArray(m.preferredRoles)
-                    ? m.preferredRoles.map(r => typeof r === 'object' && r.role ? r.role : r).join(', ')
-                    : 'No Role'
-                }</p>
-                <p><span className="font-medium">Interests:</span> {
-                  Array.isArray(m.projectInterests)
-                    ? m.projectInterests.map(pi => typeof pi === 'object' && pi.name ? pi.name : pi).join(', ')
-                    : 'No Preferences'
-                }</p>
-              <div className="grid grid-cols-2 gap-2 pt-2 text-xs text-gray-600">
-                <div>Skill: {m.skillScore?.toFixed?.(2) ?? '—'}</div>
-                <div>Personality: {m.personalityScore?.toFixed?.(2) ?? '—'}</div>
-                <div>Interest: {m.projectInterestScore?.toFixed?.(2) ?? '—'}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="mt-6">
-        <button onClick={fetchMatches} className="px-4 py-2 bg-teal text-white rounded hover:bg-teal/90 transition">
-          Refresh Matches
-        </button>
+          ))}
+        </div>
+        <div className="mt-6">
+          <button onClick={fetchMatches} className="px-4 py-2 bg-teal text-white rounded hover:bg-teal/90 transition">
+            Refresh Matches
+          </button>
+        </div>
       </div>
     </div>
   );
