@@ -218,7 +218,7 @@
 
 .battery-level {
   height: 100%;
-  background: linear-gradient(90deg, #EF4444 0%, #F59E0B 50%, #10B981 100%);
+  background: #323c47;
   transition: width 0.3s ease;
   border-radius: 4px;
 }
@@ -237,6 +237,7 @@
   background: rgba(255, 255, 255, 0.2);
   outline: none;
   -webkit-appearance: none;
+  appearance: none;
   margin-bottom: 10px;
 }
 
@@ -247,7 +248,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #8B5CF6;
+  background: #323c47;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
@@ -256,7 +257,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #8B5CF6;
+  background: #323c47;
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);

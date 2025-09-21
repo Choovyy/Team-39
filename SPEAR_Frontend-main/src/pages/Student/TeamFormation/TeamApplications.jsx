@@ -190,6 +190,8 @@ const TeamApplications = () => {
                     <th className="border border-gray-300 px-6 py-4 font-semibold">Team Name</th>
                     <th className="border border-gray-300 px-6 py-4 font-semibold">Class</th>
                     <th className="border border-gray-300 px-6 py-4 font-semibold">Role & Reason</th>
+                    <th className="border border-gray-300 px-6 py-4 font-semibold">Compatibility Score</th>
+                    {/* Added a new column for compatibility scores */}
                     <th className="border border-gray-300 px-6 py-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -204,6 +206,7 @@ const TeamApplications = () => {
                         <p className="font-semibold">{app.role}</p> 
                         <p className="text-gray-700">{app.reason}</p>
                       </td>
+                      <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.compatibilityScore ? `${app.compatibilityScore}%` : "N/A"}</td>
                       <td className="border border-gray-300 px-6 py-3 text-center">
                         <div className="flex flex-row justify-center gap-2">
                           <button
@@ -227,7 +230,7 @@ const TeamApplications = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center bg-gray-100 px-6 py-3 text-gray-900">
+                    <td colSpan="6" className="text-center bg-gray-100 px-6 py-3 text-gray-900">
                       No pending applications.
                     </td>
                   </tr>

@@ -282,6 +282,20 @@ const StudentSettings = () => {
                 className="w-full border rounded-md p-3"
               />
             </div>
+            <div>
+              <label htmlFor="personalEmail" className="block mb-2 font-medium">
+                Personal Email
+              </label>
+              <input
+                type="email"
+                id="personalEmail"
+                name="personalEmail"
+                value={userData.personalEmail || ''}
+                onChange={handleInputChange}
+                className="w-full border rounded-md p-3"
+                placeholder="Enter your personal email"
+              />
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between mt-6 space-y-3 sm:space-y-0 sm:space-x-4">

@@ -95,6 +95,20 @@ const Survey1 = () => {
     setOtherRole(e.target.value);
   };
 
+  // UI/UX helpers: font-size control and progress step
+  const [fontSize, setFontSize] = useState('16px');
+  const surveyStep = 1; // used by progress indicator
+
+  const applyFontSize = () => ({ fontSize });
+
+  // Accessibility: keyboard-friendly radio selection
+  const handleKeySelect = (e, role) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleRoleSelect(role);
+    }
+  };
+
   const handleNext = () => {
   if (!selectedRole) return;
 
@@ -117,26 +131,39 @@ const Survey1 = () => {
   const isNextDisabled = !selectedRole || (selectedRole === 'Other' && !otherRole.trim());
 
   return (
-    <div className="survey1-container">
-      <div className="survey1-background">
-        <img src={people} alt="Professional team" className="background-image" />
-        <div className="background-overlay"></div>
-      </div>
-      
-      <div className="survey1-content">
-        <div className="survey1-left">
-          <h1 className="survey1-title">Preferred Role</h1>
-          <p className="survey1-subtitle">Choose the role you're most comfortable with!</p>
+    <div className="survey1-container min-h-screen flex items-center justify-center" style={{ background: 'rgb(248 250 252 / var(--tw-bg-opacity, 1))', ...applyFontSize() }}>
+      <div className="w-full max-w-3xl p-6">
+        {/* Progress + font-size controls */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-2/3">
+            <div className="text-sm text-gray-600">Step {surveyStep} of 3</div>
+            <div className="h-2 bg-gray-200 rounded mt-1">
+              <div className="h-2 bg-teal rounded" style={{ width: `${(surveyStep / 3) * 100}%` }} aria-hidden></div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button aria-label="Decrease font size" onClick={() => setFontSize('14px')} className="px-2 py-1 border rounded">A-</button>
+            <button aria-label="Normal font size" onClick={() => setFontSize('16px')} className="px-2 py-1 border rounded">A</button>
+            <button aria-label="Increase font size" onClick={() => setFontSize('18px')} className="px-2 py-1 border rounded">A+</button>
+          </div>
         </div>
-        
-        <div className="survey1-right">
-          <div className="role-selection-card">
-            <h2 className="card-title">Preferred Role</h2>
-            <p className="card-instruction">You can select 1 role only</p>
-            
-            <div className="roles-grid">
-              {roles.map((role, index) => (
-                <div key={index} className="role-option">
+
+        <div className="bg-white shadow-md rounded-lg p-6">
+          <h1 className="text-xl font-semibold text-teal mb-2">Preferred Role</h1>
+          <p className="text-gray-600 mb-4">Choose the role you're most comfortable with. Only one selection is required.</p>
+
+          <div role="radiogroup" aria-label="Preferred role options" className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {roles.map((role, index) => (
+              <div
+                key={role}
+                tabIndex={0}
+                onKeyDown={(e) => handleKeySelect(e, role)}
+                className={`p-3 rounded border cursor-pointer focus:outline-none focus:ring-2 focus:ring-teal ${selectedRole === role ? 'border-teal bg-teal/10' : 'border-gray-200'}`}
+                onClick={() => handleRoleSelect(role)}
+                aria-checked={selectedRole === role}
+                role="radio"
+              >
+                <div className="flex items-center gap-3">
                   <input
                     type="radio"
                     id={`role-${index}`}
@@ -144,50 +171,50 @@ const Survey1 = () => {
                     value={role}
                     checked={selectedRole === role}
                     onChange={() => handleRoleSelect(role)}
-                    className="role-radio"
+                    className="hidden"
+                    aria-hidden
                   />
-                  <label htmlFor={`role-${index}`} className="role-label">
-                    {role}
-                  </label>
+                  <span className="text-gray-800 font-medium">{role}</span>
                 </div>
-              ))}
-            </div>
-            
-            <div className="other-role-checkbox">
-              <label className="skill-header">
-                <input type="checkbox" checked={otherSelected} onChange={handleOtherToggle} />
-                <span className="role-label">Others</span>
-              </label>
-            </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-4">
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={otherSelected} onChange={handleOtherToggle} className="form-checkbox" />
+              <span className="text-gray-800">Other (specify)</span>
+            </label>
             {otherSelected && (
-              <div className="other-role-section">
-                <label htmlFor="otherRole" className="other-label">Specify:</label>
+              <div className="mt-2">
+                <label htmlFor="otherRole" className="sr-only">Specify other role</label>
                 <input
                   type="text"
                   id="otherRole"
                   value={otherRole}
                   onChange={handleOtherRoleChange}
-                  className="other-input"
+                  className="w-full border rounded-md p-2"
+                  placeholder="e.g. DevOps Engineer"
                 />
               </div>
             )}
-
-            <div className="actions single-right">
-              <button 
-                className={`next-button ${isNextDisabled ? 'disabled' : ''}`}
-                onClick={handleNext}
-                disabled={isNextDisabled}
-              >
-                Next
-              </button>
-            </div>
           </div>
 
-          {/* Mastery level removed in Survey1; moved to Survey2 per requirement */}
+          <div className="flex justify-end">
+            <button
+              onClick={handleNext}
+              disabled={isNextDisabled}
+              className={`px-4 py-2 rounded ${isNextDisabled ? 'bg-gray-300 text-gray-500' : 'bg-teal text-white hover:bg-teal-dark'}`}
+            >
+              Next
+            </button>
+          </div>
+
+          {/* NOTE FOR BACKEND: Survey step saved to localStorage here. Backend endpoint to persist surveyData (step1) should be implemented by backend team. */}
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default Survey1;

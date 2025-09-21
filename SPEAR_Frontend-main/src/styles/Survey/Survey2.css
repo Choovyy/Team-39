@@ -146,7 +146,7 @@
 
 .battery-level {
   height: 100%;
-  background: linear-gradient(90deg, #EF4444 0%, #F59E0B 50%, #10B981 100%);
+  background: #323c47;
   transition: width 0.3s ease;
   border-radius: 3px;
 }
@@ -162,6 +162,16 @@
 .skill-mastery input[type="range"] {
   width: 100%;
   margin-top: 8px;
+}
+
+/* Transition for slider appearance */
+.transition-slide-in {
+  animation: slideIn 300ms ease-out;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .mastery-labels {
@@ -246,6 +256,51 @@
 .next-button.disabled {
   background: rgba(107, 114, 128, 0.5);
   cursor: not-allowed;
+}
+
+/* Focus styles for interactive cards */
+.skill-item:focus-within, .project-item:focus-within {
+  outline: 2px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.06);
+}
+
+/* Ensure sliders are visible on all themes */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: #323c47;
+  border-radius: 6px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #ffffff;
+  border: 2px solid #323c47;
+  border-radius: 50%;
+}
+
+/* Mozilla Firefox thumb/track styles */
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #ffffff;
+  border: 2px solid #323c47;
+  border-radius: 50%;
+}
+
+input[type="range"]::-moz-range-track {
+  background: #323c47;
+  height: 6px;
+  border-radius: 6px;
+}
+
+/* small accessibility tweak */
+.role-option:focus, .skill-item:focus, .project-item:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
 }
 
 @media (max-width: 768px) {
