@@ -106,12 +106,15 @@ const Dashboard = () => {
                   )}
                   <div>
                     <h2 id={`match-${idx}-name`} className="font-semibold text-teal">{m.name || 'Unknown User'}</h2>
-                    <p className="text-sm text-gray-500">Overall Score: {m.overallScore?.toFixed?.(2) ?? 'N/A'}</p>
+                    <p className="text-sm text-gray-500">Overall Score: <span style={{
+                      color: m.overallScore >= 75 ? '#22c55e' : m.overallScore > 50 ? '#fbbf24' : '#ef4444',
+                      fontWeight: 700
+                    }}>{m.overallScore?.toFixed?.(2) ?? 'N/A'}%</span></p>
                   </div>
                 </div>
 
                 <div className="text-sm space-y-1 mb-2">
-                  <p><span className="font-medium">Personality:</span> {m.personality || 'No Personality'}</p>
+                  <p><span className="font-medium">Personality:</span> {m.personality ? m.personality.replace(/Scores: C=\d+, I=\d+, P=\d+, D=\d+\.?/g, '').trim() : 'No Personality'}</p>
                   <p><span className="font-medium">Skills:</span> {
                     Array.isArray(m.technicalSkills)
                       ? m.technicalSkills.map(ts => typeof ts === 'object' && ts.skill ? ts.skill : ts).join(', ')
@@ -176,9 +179,33 @@ const Dashboard = () => {
                 {/* end sliding panel */}
 
                 <div className="mt-2 text-xs text-gray-600">
-                  <div>Skill: {m.skillScore?.toFixed?.(2) ?? '—'}</div>
-                  <div>Personality: {m.personalityScore?.toFixed?.(2) ?? '—'}</div>
-                  <div>Interest: {m.projectInterestScore?.toFixed?.(2) ?? '—'}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Skill:</span>
+                    <span style={{
+                      color: m.skillScore >= 75 ? '#22c55e' : m.skillScore > 50 ? '#fbbf24' : '#ef4444',
+                      fontWeight: 700
+                    }}>
+                      {m.skillScore?.toFixed?.(2) ?? '—'}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Personality:</span>
+                    <span style={{
+                      color: m.personalityScore >= 75 ? '#22c55e' : m.personalityScore > 50 ? '#fbbf24' : '#ef4444',
+                      fontWeight: 700
+                    }}>
+                      {m.personalityScore?.toFixed?.(2) ?? '—'}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Interest:</span>
+                    <span style={{
+                      color: m.projectInterestScore >= 75 ? '#22c55e' : m.projectInterestScore > 50 ? '#fbbf24' : '#ef4444',
+                      fontWeight: 700
+                    }}>
+                      {m.projectInterestScore?.toFixed?.(2) ?? '—'}%
+                    </span>
+                  </div>
                 </div>
               </div>
             );
