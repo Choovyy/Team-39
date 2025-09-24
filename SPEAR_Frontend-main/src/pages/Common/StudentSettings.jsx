@@ -229,12 +229,53 @@ const StudentSettings = () => {
     <ToastContainer position="top-right" autoClose={3000} />
     <div className="grid grid-cols-1 md:grid-cols-[256px_1fr] min-h-screen">
       <Navbar userRole="STUDENT" />
+
       <div className="main-content bg-white text-teal md:px-20 lg:px-28 pt-8 md:pt-12">
         <div className="header flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Student Settings</h1>
           <Header />
         </div>
 
+        {/* Read-only Survey Results Section */}
+        <div className="bg-gray-50 shadow-md rounded-lg p-8 mb-8">
+          <h2 className="text-xl font-semibold mb-4 text-teal">Your Survey Results</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <div className="mb-4">
+                <span className="block text-gray-500 font-medium mb-1">Preferred Role</span>
+                <div className="text-lg font-bold text-teal bg-white rounded px-3 py-2 shadow-sm">Backend Developer</div>
+              </div>
+              <div className="mb-4">
+                <span className="block text-gray-500 font-medium mb-1">Project Interest</span>
+                <div className="text-lg font-bold text-teal bg-white rounded px-3 py-2 shadow-sm">Mobile Apps</div>
+              </div>
+            </div>
+            <div>
+              <div className="mb-4">
+                <span className="block text-gray-500 font-medium mb-1">Technical Skills</span>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center bg-white rounded px-3 py-2 shadow-sm">
+                    <span className="font-semibold text-teal">JavaScript</span>
+                    <span className="font-bold text-green-500">33%</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-white rounded px-3 py-2 shadow-sm">
+                    <span className="font-semibold text-teal">Python</span>
+                    <span className="font-bold text-gray-400">0%</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mb-4">
+                <span className="block text-gray-500 font-medium mb-1">Personality Results</span>
+                <div className="bg-white rounded px-3 py-2 shadow-sm text-teal">
+                  Visionary Explorer (Independent, Innovative, Adaptive, Big Picture)<br/>
+                  Traits: Independent, Innovative, Adaptive, Big Picture
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Editable Profile Section (existing) */}
         <form
           className="bg-gray-100 shadow-md rounded-lg p-8 space-y-6"
           onSubmit={(e) => {
