@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException
 from ai.embedding import generate_embedding
 from ai.faiss_index import add_user_profile, get_top_matches
+from ai.db import get_user_name_by_email, get_bulk_names
 import logging
 
 #Buhata sa ni una
@@ -74,9 +75,13 @@ async def add_profile(request: Request):
             logger.error("Embedding generation failed")
             raise HTTPException(status_code=500, detail="Embedding generation failed")
 
+        # Refresh latest name from DB to keep FAISS layer aligned with authoritative source
+        db_fn, db_ln, db_full = get_user_name_by_email(data.get("email"))
+        effective_name = db_full or data["name"]
+
         user_info = {
             "email": data["email"],
-            "name": data["name"],
+            "name": effective_name,
             "technicalSkills": data["technicalSkills"],
             "preferredRoles": data["preferredRoles"],
             "projectInterests": data["projectInterests"],
@@ -144,8 +149,18 @@ async def match_profile(request: Request):
             query_project_interests=project_interests,
             query_preferred_roles=preferred_roles
         )
+        # Rehydrate names from database in case they changed after embeddings were added
+        try:
+            email_list = [m.get("email") for m in matches]
+            name_map = get_bulk_names(email_list)
+            for m in matches:
+                db_name = name_map.get(m.get("email"))
+                if db_name:
+                    m["name"] = db_name
+        except Exception as enrich_err:
+            logger.error(f"Error enriching names from DB: {enrich_err}")
 
-        logger.info(f"Found {len(matches)} matches")
+        logger.info(f"Found {len(matches)} matches (post-enrichment)")
         return {"matches": matches}
 
     except Exception as e:
