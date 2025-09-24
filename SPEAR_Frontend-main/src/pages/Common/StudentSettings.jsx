@@ -153,6 +153,8 @@ const StudentSettings = () => {
     email: "",
     firstname: "",
     lastname: "",
+    github: "",
+    facebook: "",
   });
 
   const address = getIpAddress();
@@ -226,145 +228,116 @@ const StudentSettings = () => {
 
   return (
     <>
-    <ToastContainer position="top-right" autoClose={3000} />
-    <div className="grid grid-cols-1 md:grid-cols-[256px_1fr] min-h-screen">
-      <Navbar userRole="STUDENT" />
-
-      <div className="main-content bg-white text-teal md:px-20 lg:px-28 pt-8 md:pt-12">
-        <div className="header flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Student Settings</h1>
-          <Header />
+      <ToastContainer position="top-right" autoClose={3000} />
+      <div className="grid grid-cols-1 md:grid-cols-[256px_1fr] min-h-screen">
+        <Navbar userRole="STUDENT" />
+        <div className="main-content bg-white text-teal md:px-20 lg:px-28 pt-8 md:pt-12">
+          <div className="header flex justify-between items-center mb-8">
+            <h1 className="text-2xl font-bold">Student Settings</h1>
+            <Header />
+          </div>
+          {/* Editable Profile Section (default) */}
+          <form
+            className="bg-gray-100 shadow-md rounded-lg p-8 space-y-6"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSaveChanges();
+            }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="email" className="block mb-2 font-medium">
+                  Email
+                </label>
+                <input
+                  type="text"
+                  id="email"
+                  name="email"
+                  value={userData.email}
+                  className="w-full border rounded-md p-3 bg-gray-100 cursor-not-allowed"
+                  disabled
+                />
+              </div>
+              <div>
+                <label htmlFor="firstname" className="block mb-2 font-medium">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  id="firstname"
+                  name="firstname"
+                  value={userData.firstname}
+                  onChange={handleInputChange}
+                  className="w-full border rounded-md p-3"
+                />
+              </div>
+              <div>
+                <label htmlFor="lastname" className="block mb-2 font-medium">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  id="lastname"
+                  name="lastname"
+                  value={userData.lastname}
+                  onChange={handleInputChange}
+                  className="w-full border rounded-md p-3"
+                />
+              </div>
+              <div>
+                <label htmlFor="github" className="block mb-2 font-medium">
+                  GitHub Profile Link (optional)
+                </label>
+                <input
+                  type="url"
+                  id="github"
+                  name="github"
+                  value={userData.github}
+                  onChange={handleInputChange}
+                  className="w-full border rounded-md p-3"
+                  placeholder="https://github.com/yourusername"
+                />
+              </div>
+              <div>
+                <label htmlFor="facebook" className="block mb-2 font-medium">
+                  Facebook Profile Link (optional)
+                </label>
+                <input
+                  type="url"
+                  id="facebook"
+                  name="facebook"
+                  value={userData.facebook}
+                  onChange={handleInputChange}
+                  className="w-full border rounded-md p-3"
+                  placeholder="https://facebook.com/yourprofile"
+                />
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-between mt-6 space-y-3 sm:space-y-0 sm:space-x-4">
+              <button
+                type="button"
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="bg-teal text-white px-6 py-2 rounded-lg hover:bg-teal-dark transition duration-300"
+              >
+                Change Password
+              </button>
+              <button
+                type="submit"
+                className="bg-teal text-white px-6 py-2 rounded-lg hover:bg-teal-dark transition duration-300"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
         </div>
-
-        {/* Read-only Survey Results Section */}
-        <div className="bg-gray-50 shadow-md rounded-lg p-8 mb-8">
-          <h2 className="text-xl font-semibold mb-4 text-teal">Your Survey Results</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <div className="mb-4">
-                <span className="block text-gray-500 font-medium mb-1">Preferred Role</span>
-                <div className="text-lg font-bold text-teal bg-white rounded px-3 py-2 shadow-sm">Backend Developer</div>
-              </div>
-              <div className="mb-4">
-                <span className="block text-gray-500 font-medium mb-1">Project Interest</span>
-                <div className="text-lg font-bold text-teal bg-white rounded px-3 py-2 shadow-sm">Mobile Apps</div>
-              </div>
-            </div>
-            <div>
-              <div className="mb-4">
-                <span className="block text-gray-500 font-medium mb-1">Technical Skills</span>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center bg-white rounded px-3 py-2 shadow-sm">
-                    <span className="font-semibold text-teal">JavaScript</span>
-                    <span className="font-bold text-green-500">33%</span>
-                  </div>
-                  <div className="flex justify-between items-center bg-white rounded px-3 py-2 shadow-sm">
-                    <span className="font-semibold text-teal">Python</span>
-                    <span className="font-bold text-gray-400">0%</span>
-                  </div>
-                </div>
-              </div>
-              <div className="mb-4">
-                <span className="block text-gray-500 font-medium mb-1">Personality Results</span>
-                <div className="bg-white rounded px-3 py-2 shadow-sm text-teal">
-                  Visionary Explorer (Independent, Innovative, Adaptive, Big Picture)<br/>
-                  Traits: Independent, Innovative, Adaptive, Big Picture
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Editable Profile Section (existing) */}
-        <form
-          className="bg-gray-100 shadow-md rounded-lg p-8 space-y-6"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSaveChanges();
-          }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="email" className="block mb-2 font-medium">
-                Email
-              </label>
-              <input
-                type="text"
-                id="email"
-                name="email"
-                value={userData.email}
-                className="w-full border rounded-md p-3 bg-gray-100 cursor-not-allowed"
-                disabled
-              />
-            </div>
-            <div>
-              <label htmlFor="firstname" className="block mb-2 font-medium">
-                First Name
-              </label>
-              <input
-                type="text"
-                id="firstname"
-                name="firstname"
-                value={userData.firstname}
-                onChange={handleInputChange}
-                className="w-full border rounded-md p-3"
-              />
-            </div>
-            <div>
-              <label htmlFor="lastname" className="block mb-2 font-medium">
-                Last Name
-              </label>
-              <input
-                type="text"
-                id="lastname"
-                name="lastname"
-                value={userData.lastname}
-                onChange={handleInputChange}
-                className="w-full border rounded-md p-3"
-              />
-            </div>
-            <div>
-              <label htmlFor="personalEmail" className="block mb-2 font-medium">
-                Personal Email
-              </label>
-              <input
-                type="email"
-                id="personalEmail"
-                name="personalEmail"
-                value={userData.personalEmail || ''}
-                onChange={handleInputChange}
-                className="w-full border rounded-md p-3"
-                placeholder="Enter your personal email"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-between mt-6 space-y-3 sm:space-y-0 sm:space-x-4">
-            <button
-              type="button"
-              onClick={() => setIsPasswordModalOpen(true)}
-              className="bg-teal text-white px-6 py-2 rounded-lg hover:bg-teal-dark transition duration-300"
-            >
-              Change Password
-            </button>
-            <button
-              type="submit"
-              className="bg-teal text-white px-6 py-2 rounded-lg hover:bg-teal-dark transition duration-300"
-            >
-              Save Changes
-            </button>
-          </div>
-        </form>
+        {isPasswordModalOpen && (
+          <PasswordModal
+            userId={authState.uid}
+            token={authState.token}
+            onClose={() => setIsPasswordModalOpen(false)}
+          />
+        )}
       </div>
-
-      {isPasswordModalOpen && (
-        <PasswordModal
-          userId={authState.uid}
-          token={authState.token}
-          onClose={() => setIsPasswordModalOpen(false)}
-        />
-      )}
-    </div>
     </>
   );
 };
