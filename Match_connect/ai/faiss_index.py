@@ -141,6 +141,11 @@ def get_top_matches(query_embedding, personality_embedding, exclude_email=None, 
                 # Use explicit comparison for email checking
                 if exclude_email is not None and user.get("email") == exclude_email:
                     continue
+                # If caller didn't pass an email, attempt implicit self-exclusion:
+                # The self vector (if matching an existing stored profile) will usually have (near) zero L2 distance.
+                if exclude_email is None and dist <= 1e-6:
+                    logger.debug(f"Skipping potential self-match (index={i}, dist={dist:.8f})")
+                    continue
 
                 skill_score = float(100 / (1 + dist))                
                 
@@ -222,6 +227,7 @@ def get_top_matches(query_embedding, personality_embedding, exclude_email=None, 
                 )       
                 matches.append({
                     "name": user.get("name", ""),
+                    "email": user.get("email", ""),
                     "technicalSkills": user.get("technicalSkills", []),
                     "preferredRoles": user.get("preferredRoles", []),
                     "projectInterests": user.get("projectInterests", []),

@@ -135,9 +135,11 @@ async def match_profile(request: Request):
         logger.info(f"Project interests from request: {project_interests}")
         logger.info(f"Preferred roles from request: {preferred_roles}")
         
+        # Pass the requestor's email (if provided) so the matching layer can explicitly exclude it.
+        # If email is absent, the FAISS layer will still try to avoid returning the identical vector (distance ~0).
         matches = get_top_matches(
-            query_embedding, 
-            personality_embedding, 
+            query_embedding,
+            personality_embedding,
             exclude_email=data.get("email"),
             query_project_interests=project_interests,
             query_preferred_roles=preferred_roles

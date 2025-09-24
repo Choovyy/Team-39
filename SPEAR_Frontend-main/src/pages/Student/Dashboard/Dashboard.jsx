@@ -18,6 +18,12 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [matches, setMatches] = useState([]);
   const [hoveredIndex, setHoveredIndex] = useState(null); // UI: track hovered/focused card
+  // Filters
+  const [search, setSearch] = useState("");
+  const [personalityFilter, setPersonalityFilter] = useState("");
+  const [skillFilter, setSkillFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [interestFilter, setInterestFilter] = useState("");
   const address = window.location.hostname;
 
   // Normalize contact values into safe hrefs for anchors
@@ -65,6 +71,45 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Helper: personality title (first phrase before '(' or '.')
+  const getPersonalityTitle = (p) => {
+    if(!p) return '';
+    return p.split('(')[0].split('.')[0].trim();
+  };
+
+  // All possible archetypes defined in backend PersonalityService (deriveArchetype)
+  const ALL_ARCHETYPES = [
+    'Structured Innovator',
+    'Agile Collaborator',
+    'Visionary Explorer',
+    'Versatile Contributor'
+  ];
+  // Build choices: union of backend list + any unexpected/new ones present in data
+  const personalities = Array.from(new Set([
+    ...ALL_ARCHETYPES,
+    ...matches.map(m => getPersonalityTitle(m.personality)).filter(Boolean)
+  ])).sort();
+  const skills = Array.from(new Set(matches.flatMap(m => Array.isArray(m.technicalSkills) ? m.technicalSkills.map(ts => typeof ts === 'object' && ts.skill ? ts.skill : ts) : []).filter(Boolean)));
+  const roles = Array.from(new Set(matches.flatMap(m => Array.isArray(m.preferredRoles) ? m.preferredRoles.map(r => typeof r === 'object' && r.role ? r.role : r) : []).filter(Boolean)));
+  const interests = Array.from(new Set(matches.flatMap(m => Array.isArray(m.projectInterests) ? m.projectInterests : []).filter(Boolean)));
+
+  // Filtering logic + self exclusion by email only
+  const filteredMatches = matches.filter(m => {
+    const userEmail = authState.email?.toLowerCase();
+    if (userEmail) {
+      const matchEmails = [m.email, m.personalEmail, m.contactEmail].filter(Boolean).map(e => String(e).toLowerCase());
+      if (matchEmails.includes(userEmail)) return false;
+    }
+    const nameMatch = !search || m.name?.toLowerCase().includes(search.toLowerCase());
+    const personalityTitle = getPersonalityTitle(m.personality);
+    const personalityMatch = !personalityFilter || personalityTitle === personalityFilter;
+    const skillMatch = !skillFilter || (Array.isArray(m.technicalSkills) && m.technicalSkills.some(ts => {
+      const val = typeof ts === 'object' && ts.skill ? ts.skill : ts; return val === skillFilter; }));
+    const roleMatch = !roleFilter || (Array.isArray(m.preferredRoles) && m.preferredRoles.some(r => { const val = typeof r === 'object' && r.role ? r.role : r; return val === roleFilter;}));
+    const interestMatch = !interestFilter || (Array.isArray(m.projectInterests) && m.projectInterests.includes(interestFilter));
+    return nameMatch && personalityMatch && skillMatch && roleMatch && interestMatch;
+  });
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-[256px_1fr] min-h-screen">
       <Navbar userRole={authState.role} />
@@ -72,13 +117,40 @@ const Dashboard = () => {
         <div className="flex items-start justify-between mb-4 gap-4 flex-wrap">
           <h1 className="text-2xl font-bold text-teal">AI Match Recommendations</h1>
         </div>
+        {/* Filter Bar */}
+        <div className="flex flex-wrap gap-4 mb-6 items-center">
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="border rounded px-3 py-2 min-w-[180px]"
+          />
+          <select value={personalityFilter} onChange={e => setPersonalityFilter(e.target.value)} className="border rounded px-3 py-2 min-w-[160px]">
+            <option value="">All Personalities</option>
+            {personalities.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+            <select value={skillFilter} onChange={e => setSkillFilter(e.target.value)} className="border rounded px-3 py-2 min-w-[160px]">
+            <option value="">All Skills</option>
+            {skills.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="border rounded px-3 py-2 min-w-[160px]">
+            <option value="">All Roles</option>
+            {roles.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <select value={interestFilter} onChange={e => setInterestFilter(e.target.value)} className="border rounded px-3 py-2 min-w-[160px]">
+            <option value="">All Project Interests</option>
+            {interests.map(i => <option key={i} value={i}>{i}</option>)}
+          </select>
+          <button type="button" onClick={() => { setSearch(""); setPersonalityFilter(""); setSkillFilter(""); setRoleFilter(""); setInterestFilter(""); }} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-sm rounded border">Clear</button>
+        </div>
         {loading && <p className="text-gray-600">Loading matches...</p>}
         {error && <div className="text-red-600 mb-4">{String(error)}</div>}
-        {!loading && matches?.length === 0 && !error && (
-          <p className="text-gray-500">No matches yet.</p>
+        {!loading && filteredMatches?.length === 0 && !error && (
+          <p className="text-gray-500">No matches found.</p>
         )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {matches?.map((m, idx) => {
+          {filteredMatches?.map((m, idx) => {
             const emailHref = normalizeLink(m.email || m.personalEmail || m.contactEmail, 'email');
             const githubHref = normalizeLink(m.github || m.githubUrl || m.githubHandle, 'github');
             const facebookHref = normalizeLink(m.facebook || m.facebookUrl || m.facebookHandle, 'facebook');
