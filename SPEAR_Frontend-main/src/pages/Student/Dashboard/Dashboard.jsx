@@ -27,26 +27,7 @@ const Dashboard = () => {
   const address = window.location.hostname;
 
   // Normalize contact values into safe hrefs for anchors
-  const normalizeLink = (value, type) => {
-    if (!value) return null;
-    const v = String(value).trim();
-    if (!v) return null;
-
-    if (type === 'email') return `mailto:${v}`;
-
-    if (/^https?:\/\//i.test(v)) return v;
-
-    if (type === 'github') {
-      const username = v.replace(/^@/, '');
-      return `https://github.com/${username}`;
-    }
-
-    if (type === 'facebook') {
-      return `https://facebook.com/${v.replace(/^@/, '')}`;
-    }
-
-    return `https://${v}`;
-  };
+  
 
   const fetchMatches = async () => {
     setLoading(true); setError(null);
@@ -70,6 +51,63 @@ const Dashboard = () => {
   useEffect(() => { fetchMatches(); // initial load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  
+
+  
+  const buildOutlookComposeLink = (rawEmail, matchObj) => {
+    if (!rawEmail) return null;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(rawEmail)) return null;
+
+    const subject = encodeURIComponent('Collaboration Opportunity - CapstoneConnect');
+    const bodyLines = [
+      `Hi ${matchObj?.name || 'there'},`,
+      ``,
+      `I saw your profile on the CapstoneConnect Match Dashboard and would like to collaborate on a project / form a team.`,
+      `Preferred Roles: ${
+        Array.isArray(matchObj?.preferredRoles)
+          ? matchObj.preferredRoles.map(r => (r.role || r)).join(', ')
+          : 'N/A'
+      }`,
+      `Skills: ${
+        Array.isArray(matchObj?.technicalSkills)
+          ? matchObj.technicalSkills.map(s => (s.skill || s)).join(', ')
+          : 'N/A'
+      }`,
+      `Project Interests: ${
+        Array.isArray(matchObj?.projectInterests)
+          ? matchObj.projectInterests.join(', ')
+          : 'N/A'
+      }`,
+      ``,
+      `Let me know if you're interested.`,
+      ``,
+      `Thanks,`,
+      `${authState?.name || 'A Capstone User'}`
+    ];
+    const body = encodeURIComponent(bodyLines.join('\n'));
+    // Outlook Web compose deeplink
+    return `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(rawEmail)}&subject=${subject}&body=${body}`;
+  };
+
+  
+  const normalizeLink = (value, type) => {
+    if (!value) return null;
+    const v = String(value).trim();
+    if (!v) return null;
+    if (type === 'github') {
+      const username = v.replace(/^@/, '');
+      if (/^https?:\/\//i.test(username)) return username;
+      return `https://github.com/${username}`;
+    }
+    if (type === 'facebook') {
+      if (/^https?:\/\//i.test(v)) return v;
+      return `https://facebook.com/${v.replace(/^@/, '')}`;
+    }
+    if (/^https?:\/\//i.test(v)) return v;
+    return `https://${v}`;
+  };
 
   // Helper: personality title (first phrase before '(' or '.')
   const getPersonalityTitle = (p) => {
@@ -151,7 +189,8 @@ const Dashboard = () => {
         )}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredMatches?.map((m, idx) => {
-            const emailHref = normalizeLink(m.email || m.personalEmail || m.contactEmail, 'email');
+            const email = m.email;
+            const outlookHref = buildOutlookComposeLink(email, m);
             const githubHref = normalizeLink(m.github || m.githubUrl || m.githubHandle, 'github');
             const facebookHref = normalizeLink(m.facebook || m.facebookUrl || m.facebookHandle, 'facebook');
 
@@ -207,44 +246,80 @@ const Dashboard = () => {
                   style={{ backdropFilter: 'saturate(120%) blur(4px)' }}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
-                      <div className="mb-1">
-                        <span className="font-medium mr-2">Email:</span>
-                        {emailHref ? (
-                          <a href={emailHref} className="text-[#323c47] underline" target="_blank" rel="noopener noreferrer">{m.email || m.personalEmail}</a>
+                     <div className="text-sm text-gray-700 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Email:</span>
+                        {outlookHref ? (
+                          <a
+                            href={outlookHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Email ${m.name} via Outlook`}
+                            aria-label={`Email ${m.name} via Outlook`}
+                            className="p-1 rounded hover:bg-gray-100 inline-flex"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
+                              <rect x="20" y="10" width="38" height="44" rx="4" fill="#0A64AD"/>
+                              <path d="M6 20h34c1.657 0 3 1.343 3 3v18c0 1.657-1.343 3-3 3H6c-1.657 0-3-1.343-3-3V23c0-1.657 1.343-3 3-3z" fill="#ffffff" stroke="#0A64AD" strokeWidth="2"/>
+                              <path d="M6 23l17 11 17-11" fill="none" stroke="#0A64AD" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                              <circle cx="46" cy="32" r="11" fill="#ffffff" opacity="0.18"/>
+                              <text x="46" y="36" textAnchor="middle" fontSize="14" fontFamily="Segoe UI, Arial" fontWeight="700" fill="#ffffff">O</text>
+                            </svg>
+                          </a>
                         ) : <span className="text-gray-400">N/A</span>}
                       </div>
-                      <div className="mb-1">
-                        <span className="font-medium mr-2">GitHub:</span>
-                        {githubHref ? (
-                          <a href={githubHref} className="text-[#323c47] underline" target="_blank" rel="noopener noreferrer">{m.github || m.githubHandle || 'View'}</a>
-                        ) : <span className="text-gray-400">N/A</span>}
-                      </div>
-                      <div>
-                        <span className="font-medium mr-2">Facebook:</span>
-                        {facebookHref ? (
-                          <a href={facebookHref} className="text-[#323c47] underline" target="_blank" rel="noopener noreferrer">{m.facebook || 'View'}</a>
-                        ) : <span className="text-gray-400">N/A</span>}
-                      </div>
-                    </div>
 
-                    {/* Compact action icons for quick interactions */}
-                    <div className="flex items-center gap-2">
-                      {emailHref && (
-                        <a href={emailHref} target="_blank" rel="noopener noreferrer" title="Email" className="p-2 rounded hover:bg-gray-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#323c47" strokeWidth="1.5"><path d="M3 8.5v7A2.5 2.5 0 0 0 5.5 18h13A2.5 2.5 0 0 0 21 15.5v-7" strokeLinecap="round" strokeLinejoin="round"/><path d="M21 8.5L12 13 3 8.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </a>
-                      )}
-                      {githubHref && (
-                        <a href={githubHref} target="_blank" rel="noopener noreferrer" title="GitHub" className="p-2 rounded hover:bg-gray-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#323c47" strokeWidth="1.5"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.09 3.29 9.41 7.86 10.94.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.7-3.88-1.54-3.88-1.54-.53-1.35-1.3-1.71-1.3-1.71-1.06-.72.08-.71.08-.71 1.17.08 1.78 1.2 1.78 1.2 1.04 1.78 2.73 1.27 3.4.97.11-.75.41-1.27.75-1.56-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.2-3.1-.12-.3-.52-1.5.11-3.12 0 0 .97-.31 3.18 1.18A11.03 11.03 0 0 1 12 6.8c.98.01 1.97.13 2.9.38 2.2-1.49 3.18-1.18 3.18-1.18.63 1.62.23 2.82.12 3.12.75.81 1.2 1.84 1.2 3.1 0 4.43-2.71 5.4-5.29 5.68.42.37.8 1.11.8 2.24 0 1.62-.01 2.92-.01 3.32 0 .31.21.68.8.56C20.71 21.41 24 17.09 24 12c0-6.35-5.15-11.5-12-11.5z" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </a>
-                      )}
-                      {facebookHref && (
-                        <a href={facebookHref} target="_blank" rel="noopener noreferrer" title="Facebook" className="p-2 rounded hover:bg-gray-100">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="#323c47" strokeWidth="1.5"><path d="M18 2h-3a4 4 0 0 0-4 4v3H8v3h3v7h3v-7h2.3l.7-3H14V6a1 1 0 0 1 1-1h3z" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        </a>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">GitHub:</span>
+                        {githubHref ? (
+                          <a
+                            href={githubHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open GitHub profile"
+                            aria-label="Open GitHub profile"
+                            className="p-1 rounded hover:bg-gray-100 inline-flex"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                              <circle cx="12" cy="12" r="11" fill="#181717" />
+                              <path d="M9.25 17.75c-.1-.3-.17-.77-.17-1.38 0-1.02.35-1.68.75-2.02-2.48-.28-3.83-1.14-3.83-3.02 0-.84.33-1.54.88-2.08-.09-.29-.38-1.07.08-2.02 0 0 .7-.23 2.3.88a8.1 8.1 0 0 1 4.18 0c1.6-1.11 2.3-.88 2.3-.88.46.95.17 1.73.08 2.02.55.54.88 1.24.88 2.08 0 1.88-1.36 2.74-3.84 3.02.53.45.82 1.15.82 2.16 0 .86-.06 1.55-.06 1.76 0 .23-.17.5-.64.42A6.43 6.43 0 0 1 12 18.5a6.43 6.43 0 0 1-1.69-.22c-.47.08-.64-.19-.64-.42Z" fill="#fff"/>
+                            </svg>
+                          </a>
+                        ) : (
+    <span className="p-1 inline-flex items-center justify-center opacity-30 leading-none" title="No GitHub provided">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="11" fill="#181717" />
+        <path d="M9.25 17.75c-.1-.3-.17-.77-.17-1.38 0-1.02.35-1.68.75-2.02-2.48-.28-3.83-1.14-3.83-3.02 0-.84.33-1.54.88-2.08-.09-.29-.38-1.07.08-2.02 0 0 .7-.23 2.3.88a8.1 8.1 0 0 1 4.18 0c1.6-1.11 2.3-.88 2.3-.88.46.95.17 1.73.08 2.02.55.54.88 1.24.88 2.08 0 1.88-1.36 2.74-3.84 3.02.53.45.82 1.15.82 2.16 0 .86-.06 1.55-.06 1.76 0 .23-.17.5-.64.42A6.43 6.43 0 0 1 12 18.5a6.43 6.43 0 0 1-1.69-.22c-.47.08-.64-.19-.64-.42Z" fill="#fff"/>
+      </svg>
+    </span>
+  )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Facebook:</span>
+                        {facebookHref ? (
+                          <a
+                            href={facebookHref}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Open Facebook profile"
+                            aria-label="Open Facebook profile"
+                            className="p-1 rounded hover:bg-gray-100 inline-flex"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                              <circle cx="12" cy="12" r="11" fill="#1877F2" />
+                              <path d="M13.3 8.5H15V6.1c-.3-.04-.98-.1-1.86-.1-1.84 0-3.1 1.15-3.1 3.25v1.8H8v2.3h2.04V19h2.46v-5.65h2.04l.33-2.3h-2.37v-1.6c0-.66.18-1.1 1.8-1.1Z" fill="#fff"/>
+                            </svg>
+                          </a>
+                        ) : (
+                          <span className="p-1 inline-flex items-center justify-center opacity-30 leading-none" title="No Facebook provided">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                              <circle cx="12" cy="12" r="11" fill="#1877F2" />
+                              <path d="M13.3 8.5H15V6.1c-.3-.04-.98-.1-1.86-.1-1.84 0-3.1 1.15-3.1 3.25v1.8H8v2.3h2.04V19h2.46v-5.65h2.04l.33-2.3h-2.37v-1.6c0-.66.18-1.1 1.8-1.1Z" fill="#fff" />
+                            </svg>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

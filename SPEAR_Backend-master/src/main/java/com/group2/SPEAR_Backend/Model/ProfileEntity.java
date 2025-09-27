@@ -23,6 +23,9 @@ public class ProfileEntity {
     @Column(name = "github")
     private String github;
 
+    @Column(name = "facebook")            // NEW
+    private String facebook;              // NEW
+
     @OneToOne
     @JoinColumn(name = "user_id", referencedColumnName = "uid")
     @JsonBackReference(value = "profile-user")
@@ -58,6 +61,10 @@ public class ProfileEntity {
         this.github = github;
     }
 
+    // getters/setters (add for facebook)
+    public String getFacebook() { return facebook; }
+    public void setFacebook(String facebook) { this.facebook = facebook; }
+
     public User getUser() {
         return user;
     }
@@ -82,6 +89,8 @@ public class ProfileEntity {
         profileDTO.setId(this.id);
         profileDTO.setProfilePicture(this.profilePicture);
         profileDTO.setGithub(this.github);
+        profileDTO.setFacebook(this.facebook); // NEW
+
 
         // Set user info
         if (this.user != null) {

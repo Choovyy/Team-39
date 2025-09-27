@@ -140,43 +140,43 @@ public class UserService implements UserDetailsService {
 
 
 
-    public UserDTO login(UserDTO loginRequest) {
-        UserDTO response = new UserDTO();
-        try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequest.getEmail(),
-                            loginRequest.getPassword()
-                    )
-            );
-            User user = userRepo.findByEmail(loginRequest.getEmail())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+        public UserDTO login(UserDTO loginRequest) {
+            UserDTO response = new UserDTO();
+            try {
+                authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(
+                                loginRequest.getEmail(),
+                                loginRequest.getPassword()
+                        )
+                );
+                User user = userRepo.findByEmail(loginRequest.getEmail())
+                        .orElseThrow(() -> new RuntimeException("User not found"));
 
-            if (Boolean.TRUE.equals(user.getIsDeleted())) {
-                throw new RuntimeException("User not found");
+                if (Boolean.TRUE.equals(user.getIsDeleted())) {
+                    throw new RuntimeException("User not found");
+                }
+
+                String jwt = jwtUtil.generateToken(user);
+                String refreshToken = jwtUtil.generateRefreshToken(new HashMap<>(), user);
+
+                response.setStatusCode(200);
+                response.setToken(jwt);
+                response.setRole(user.getRole());
+                response.setRefreshToken(refreshToken);
+                response.setExpirationTime("24Hrs");
+                response.setMessage("Successfully Logged In");
+                response.setUid(user.getUid());
+                response.setFirstTimeUser(user.isFirstTimeUser()); // 👈 pass to frontend
+
+            } catch (RuntimeException e) {
+                response.setStatusCode(404);
+                response.setMessage(e.getMessage());
+            } catch (Exception e) {
+                response.setStatusCode(500);
+                response.setMessage("An error occurred: " + e.getMessage());
             }
-
-            String jwt = jwtUtil.generateToken(user);
-            String refreshToken = jwtUtil.generateRefreshToken(new HashMap<>(), user);
-
-            response.setStatusCode(200);
-            response.setToken(jwt);
-            response.setRole(user.getRole());
-            response.setRefreshToken(refreshToken);
-            response.setExpirationTime("24Hrs");
-            response.setMessage("Successfully Logged In");
-            response.setUid(user.getUid());
-            response.setFirstTimeUser(user.isFirstTimeUser()); // 👈 pass to frontend
-
-        } catch (RuntimeException e) {
-            response.setStatusCode(404);
-            response.setMessage(e.getMessage());
-        } catch (Exception e) {
-            response.setStatusCode(500);
-            response.setMessage("An error occurred: " + e.getMessage());
+            return response;
         }
-        return response;
-    }
 
 
     public UserDTO refreshToken(UserDTO refreshTokenRequest){

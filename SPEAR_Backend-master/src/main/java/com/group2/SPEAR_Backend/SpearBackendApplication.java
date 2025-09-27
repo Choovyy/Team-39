@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.logging.Logger;
 
 @SpringBootApplication
-public class SpearBackendApplication {
+public class 	SpearBackendApplication {
 
 	static Logger logger = Logger.getLogger(SpearBackendApplication.class.getName());
 

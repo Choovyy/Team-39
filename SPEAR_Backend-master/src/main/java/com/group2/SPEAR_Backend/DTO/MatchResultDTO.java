@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class MatchResultDTO {
     private String name;
+    private String email;
     private List<TechnicalSkillDTO> technicalSkills;
     private List<String> preferredRoles;
     private List<String> projectInterests;
@@ -17,12 +18,15 @@ public class MatchResultDTO {
     private double projectInterestScore; // score based on matching project interests
     private double preferredRolesScore; // score based on preferred roles (new field from AI service)
     private String profilePicture; // URL of the user's profile picture
+    private String github;
+    private String facebook;
 
     public MatchResultDTO() {}
-    public MatchResultDTO(String name, List<TechnicalSkillDTO> technicalSkills, List<String> preferredRoles,
+    public MatchResultDTO(String name,String email,  List<TechnicalSkillDTO> technicalSkills, List<String> preferredRoles,
                          List<String> projectInterests, String personality, double overallScore,
-                         double skillScore, double personalityScore, double projectInterestScore, String profilePicture) {
+                         double skillScore, double personalityScore, double projectInterestScore, String profilePicture, String github, String facebook) {
         this.name = name;
+        this.email = email;
         this.technicalSkills = technicalSkills;
         this.preferredRoles = preferredRoles;
         this.projectInterests = projectInterests;
@@ -32,6 +36,8 @@ public class MatchResultDTO {
         this.personalityScore = personalityScore;
         this.projectInterestScore = projectInterestScore;
         this.profilePicture = profilePicture;
+        this.github = github;
+        this.facebook = facebook;
     }
 
     // Getters and Setters
@@ -43,6 +49,9 @@ public class MatchResultDTO {
         this.name = name;
     }
 
+    public String getEmail(){return email;}
+
+    public void setEmail(String email){this.email = email;}
     public List<TechnicalSkillDTO> getTechnicalSkills() {
         return technicalSkills;
     }
@@ -118,4 +127,9 @@ public class MatchResultDTO {
     public void setProfilePicture(String profilePicture) {
         this.profilePicture = profilePicture;
     }
+
+    public String getGithub() { return github; }
+    public void setGithub(String github) { this.github = github; }
+    public String getFacebook() { return facebook; }
+    public void setFacebook(String facebook) { this.facebook = facebook; }
 }

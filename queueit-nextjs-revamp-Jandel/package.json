@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 5173",
-    "build": "next build --no-lint",
-    "start": "next start",
-    "lint": "next lint"
-  },
+  "dev": "next dev -p 5173 -H localhost",
+  "build": "next build --no-lint",
+  "start": "next start",
+  "lint": "next lint"
+},
+
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",

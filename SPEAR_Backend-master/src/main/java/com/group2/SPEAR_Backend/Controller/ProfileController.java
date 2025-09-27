@@ -1,13 +1,19 @@
 package com.group2.SPEAR_Backend.Controller;
 
-
 import com.group2.SPEAR_Backend.DTO.ProfileDTO;
 import com.group2.SPEAR_Backend.Service.ProfileService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
+
+/*
+Endpoints:
+GET  /api/profile/{userId}          -> fetch (auto-create if absent)
+PUT  /api/profile/{userId}          -> upsert full profile (partial fields allowed)
+PATCH /api/profile/{userId}/socials -> update github/facebook only
+PUT  /api/profile/{userId}/picture  -> update profile picture only
+(legacy) POST /api/profile/update/{userId} retained if needed by old frontend
+*/
 
 @RestController
 @RequestMapping("/api/profile")
@@ -21,20 +27,26 @@ public class ProfileController {
         return profileService.getProfileByUserId(userId).toDTO();
     }
 
-    @PostMapping("/update/{userId}")
-    public ProfileDTO updateProfile(@PathVariable Integer userId, @RequestBody ProfileDTO profileDTO) {
-        return profileService.saveOrUpdateProfile(userId, profileDTO).toDTO();
+    @PutMapping("/{userId}")
+    public ProfileDTO upsertProfile(@PathVariable Integer userId, @RequestBody ProfileDTO dto) {
+        return profileService.saveOrUpdateProfile(userId, dto).toDTO();
     }
 
-    @PutMapping("/{profileId}/profile-picture")
-    public ResponseEntity<?> updateProfilePicture(@PathVariable Integer profileId, @RequestBody Map<String, String> request) {
-        try {
-            String profilePictureUrl = request.get("profilePictureUrl");
-            ProfileDTO updatedProfile = profileService.updateProfilePicture(profileId, profilePictureUrl);
-            return ResponseEntity.ok(updatedProfile);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error updating profile picture: " + e.getMessage());
-        }
+    @PatchMapping("/{userId}/socials")
+    public ProfileDTO updateSocials(@PathVariable Integer userId,
+                                    @RequestBody ProfileDTO dto) {
+        return profileService.updateSocials(userId, dto.getGithub(), dto.getFacebook());
+    }
+
+    @PutMapping("/{userId}/picture")
+    public ProfileDTO updatePicture(@PathVariable Integer userId,
+                                    @RequestBody ProfileDTO dto) {
+        return profileService.updateProfilePicture(userId, dto.getProfilePicture());
+    }
+
+    // Legacy compatibility (optional)
+    @PostMapping("/update/{userId}")
+    public ProfileDTO legacyUpdate(@PathVariable Integer userId, @RequestBody ProfileDTO dto) {
+        return profileService.saveOrUpdateProfile(userId, dto).toDTO();
     }
 }

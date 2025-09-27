@@ -16,13 +16,14 @@ public class ProfileDTO {
     private List<String> preferredRoles;
     private String personality;
     private String github;
+    private String facebook;
 
     public ProfileDTO() {}
 
     public ProfileDTO(Long id, Integer userId, String firstname, String lastname, String name,
                       String email, String profilePicture, List<TechnicalSkillDTO> technicalSkills,
                       List<String> projectInterests, List<String> preferredRoles,
-                      String personality, String github) {
+                      String personality, String github, String facebook) {
         this.id = id;
         this.userId = userId;
         this.firstname = firstname;
@@ -35,6 +36,7 @@ public class ProfileDTO {
         this.preferredRoles = preferredRoles;
         this.personality = personality;
         this.github = github;
+        this.facebook = facebook;
     }
 
     // Getters and Setters
@@ -73,4 +75,7 @@ public class ProfileDTO {
 
     public String getGithub() { return github; }
     public void setGithub(String github) { this.github = github; }
+
+    public String getFacebook() { return facebook; }
+    public void setFacebook(String facebook) { this.facebook = facebook; }
 }

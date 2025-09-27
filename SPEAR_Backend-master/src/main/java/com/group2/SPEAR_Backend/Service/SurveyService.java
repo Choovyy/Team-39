@@ -198,83 +198,65 @@ private SurveyRepository surveyRepository;
         requestBody.put("projectInterests", surveyDTO.getProjectInterests());
         requestBody.put("personality", surveyDTO.getPersonality());
 
-
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
         try {
-            // Log what we're about to send
-            System.out.println("✅ Requesting matches from AI system");
-
-            // Log request body for debugging
             ObjectMapper mapper = new ObjectMapper();
-            String jsonRequestBody = mapper.writeValueAsString(requestBody);
-            System.out.println("📦 Request body: " + jsonRequestBody);
-
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
 
-            // Check response status
             if (!response.getStatusCode().is2xxSuccessful()) {
-                System.err.println("❌ Matching service returned error status: " + response.getStatusCode());
-                System.err.println("❌ Response body: " + response.getBody());
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                         "Matching service returned status " + response.getStatusCode());
             }
 
-            // Log response for debugging
-            System.out.println("✅ Received response: " + response.getBody());
+            Map<String, List<MatchResultDTO>> responseMap = mapper.readValue(
+                    response.getBody(),
+                    new TypeReference<Map<String, List<MatchResultDTO>>>() {}
+            );
 
-            try {
-                mapper = new ObjectMapper();
-                Map<String, List<MatchResultDTO>> responseMap = mapper.readValue(
-                        response.getBody(),
-                        new TypeReference<Map<String, List<MatchResultDTO>>>() {}
-                );
-
-                List<MatchResultDTO> matches = responseMap.get("matches");
-                System.out.println("✅ Received " + (matches != null ? matches.size() : 0) + " matches from AI system");
-
-                if (matches == null) {
-                    return new ArrayList<>(); // Return empty list instead of null
-                }
-                // Enrich matches with profile picture
-                for (MatchResultDTO match : matches) {
-                    // Try to find the profile by user name
-                    ProfileEntity profile = profileRepository.findAll().stream()
-                            .filter(p -> p.getUser() != null && p.getUser().getFullName() != null && p.getUser().getFullName()  .equals(match.getName()))
-                            .findFirst()
-                            .orElse(null);
-                    if (profile != null) {
-                        match.setProfilePicture(profile.getProfilePicture());
-                    } else {
-                        match.setProfilePicture(null); // or set a default/placeholder if you want
-                    }
-                }
-                // Enrich matches with profile picture using user name
-                for (MatchResultDTO match : matches) {
-                    // Try to find the profile by user name
-                    ProfileEntity profile = profileRepository.findAll().stream()
-                            .filter(p -> p.getUser() != null && p.getUser().getFullName() != null && p.getUser().getFullName().equals(match.getName()))
-                            .findFirst()
-                            .orElse(null);
-                    if (profile != null) {
-                        match.setProfilePicture(profile.getProfilePicture());
-                    } else {
-                        match.setProfilePicture(null); // or set a default/placeholder if you want
-                    }
-                }
-                return matches;
-            } catch (Exception e) {
-                System.err.println("❌ Error parsing response from matching service: " + e.getMessage());
-                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error parsing response from matching service: " + e.getMessage());
+            List<MatchResultDTO> matches = responseMap.get("matches");
+            if (matches == null) {
+                return new ArrayList<>();
             }
+
+            // Preload users and profiles for enrichment
+            List<User> users = userRepository.findAll();
+            Map<String, String> emailByFullName = new HashMap<>();
+            for (User u : users) {
+                emailByFullName.put(u.getFullName(), u.getEmail());
+            }
+
+            List<ProfileEntity> profiles = profileRepository.findAll();
+            Map<String, String> pictureByFullName  = new HashMap<>();
+            Map<String, String> githubByFullName   = new HashMap<>();   // NEW
+            Map<String, String> facebookByFullName = new HashMap<>();   // NEW
+            for (ProfileEntity p : profiles) {
+                if (p.getUser() != null && p.getUser().getFullName() != null) {
+                    String fn = p.getUser().getFullName();
+                    pictureByFullName.put(fn, p.getProfilePicture());
+                    githubByFullName.put(fn, p.getGithub());
+                    facebookByFullName.put(fn, p.getFacebook());
+                }
+            }
+
+            // Enrich matches
+            for (MatchResultDTO match : matches) {
+                if (match.getEmail() == null || match.getEmail().isBlank()) {
+                    String enrichedEmail = emailByFullName.get(match.getName());
+                    if (enrichedEmail != null) match.setEmail(enrichedEmail);
+                }
+                match.setProfilePicture(pictureByFullName.getOrDefault(match.getName(), null));
+
+                if (match.getGithub() == null || match.getGithub().isBlank()) {
+                    match.setGithub(githubByFullName.get(match.getName()));       // NEW
+                }
+                if (match.getFacebook() == null || match.getFacebook().isBlank()) {
+                    match.setFacebook(facebookByFullName.get(match.getName()));   // NEW
+                }
+            }
+
+            return matches;
         } catch (Exception e) {
-            System.err.println("❌ Error calling /match: " + e.getMessage());
-            // Try to determine if it's a connection issue
-            if (e.getMessage().contains("Connection refused") || e.getMessage().contains("Connection timed out")) {
-                System.err.println("❌ Could not connect to matching service at URL: " + url);
-                System.err.println("❌ Make sure the Python FastAPI service is running on the expected port");
-            }
-            e.printStackTrace(); // Added for more detailed debugging
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Matching service unavailable: " + e.getMessage());
         }
     }
