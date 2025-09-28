@@ -32,9 +32,9 @@ const SelectionPage = () => {
         onMouseEnter={() => setHovered('spear')}
         onMouseLeave={() => setHovered(null)}
       >
-        <h2 className="section-title">SPEAR</h2>
-        <p className="section-description">Student Project Evaluation & Recommendation</p>
-        <button className="spear-btn" onClick={handleSpearClick}>Enter SPEAR</button>
+        <h2 className="section-title">CapstoneConnect</h2>
+        <p className="section-description">Team Collaboration with Predictive Matching Platform</p>
+        <button className="spear-btn" onClick={handleSpearClick}>Enter CapstoneConnect</button>
       </div>
     </div>
   );

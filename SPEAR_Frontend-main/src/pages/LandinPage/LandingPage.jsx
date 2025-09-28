@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import logo from "../../assets/imgs/logo-dark.png";
+import logo from "../../assets/imgs/cc_logo_dark.png";
 import Home from "./Home";
 
 const LandingPage = () => {
@@ -24,7 +24,7 @@ const LandingPage = () => {
 
           {/* Text */}
           <p className="text-teal font-medium pl-4 hidden lg:block">
-            Student Peer Evaluation and Review System
+            Team Collaboration with Predictive Matching Platform
           </p>
 
           {/* Desktop Navigation */}

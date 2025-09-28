@@ -103,7 +103,7 @@
 
 /* Content styling */
 .section-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
   text-align: center;
@@ -113,7 +113,7 @@
   font-size: 1rem;
   margin-bottom: 1.5rem;
   text-align: center;
-  max-width: 280px;
+  max-width: 310px;
   line-height: 1.4;
 }
 
@@ -129,7 +129,7 @@
 
 /* Button styling */
 .queueit-btn, .spear-btn {
-  width: 120px;
+  width: 210px;
   height: 40px;
   font-size: 0.95rem;
   border: none;
