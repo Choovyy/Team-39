@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import logo from "../../assets/imgs/logo-dark.png";
+import logo from "../../assets/imgs/cc_logo_dark.png";
 import AuthContext from "../../services/AuthContext";
 
 const Login = () => {
@@ -247,14 +247,23 @@ const Login = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="main-content grid grid-cols-2 bg-teal w-[928px] h-[696px] rounded-lg items-center drop-shadow-2xl overflow-hidden">
           <div className="logo flex flex-col items-center justify-center bg-white h-full p-4 rounded-l-lg">
-            <img src={logo} alt="logo" className="w-1/2 mb-6" />
-            <p className="text-md font-medium p-4 text-center text-gray-700">
-              Student Peer Evaluation and Review System
-            </p>
+            <img
+              src={logo}
+              alt="CapstoneConnect logo"
+              className="mb-6 w-2/3 max-w-[240px] md:max-w-[280px]"
+            />
+
+            <h2 className="p-4 text-center">
+              <span className="text-3xl md:text-4xl font-semibold">
+                <span className="text-[#ca9f58]">Capstone</span>
+                <span className="text-[#323C47]">Connect</span>
+              </span>
+            </h2>
+
             <div className="mt-4 w-3/4">
               <div className="bg-teal bg-opacity-10 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 italic">
-                  "Empowering students through collaborative learning and meaningful feedback"
+                <p className="text-sm text-gray-600 italic text-center">
+                  "Optimizing Collaborative Team Formation with Predictive Matching Platform"
                 </p>
               </div>
             </div>

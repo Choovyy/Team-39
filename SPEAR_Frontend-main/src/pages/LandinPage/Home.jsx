@@ -20,7 +20,7 @@ const Home = () => {
             Welcome to
             <br /> 
             <span>
-            <span className="text-orange-300">Capstone</span>
+            <span className="text-[#ca9f58]">Capstone</span>
             <span className="text-slate-600">Connect</span>
             </span>
           </h1>

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import logo from "../../assets/imgs/logo-dark.png";
+import logo from "../../assets/imgs/cc_logo_dark.png";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -190,7 +190,7 @@ const Register = () => {
           <div className="header flex items-center justify-center bg-white rounded-t-lg w-full h-full">
             <img src={logo} alt="logo" className="w-20 h-20 object-contain" />
             <p className="text-md font-medium pl-4">
-              Student Peer Evaluation and Review System
+              Team Collaboration with Predictive Matching Platform
             </p>
           </div>
 
