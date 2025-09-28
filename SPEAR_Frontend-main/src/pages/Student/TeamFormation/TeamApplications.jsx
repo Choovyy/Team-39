@@ -18,6 +18,10 @@ const TeamApplications = () => {
   const [selectedAppId, setSelectedAppId] = useState(null);
   const [activeTab, setActiveTab] = useState("team");
   const [teamInvites, setTeamInvites] = useState([]);
+  // Pairwise compatibility scores for each recruitment/application (keyed by trid)
+  const [pairwiseScoresByTrid, setPairwiseScoresByTrid] = useState({});
+  // Track expanded rows for showing detailed scores
+  const [expandedRows, setExpandedRows] = useState(new Set());
 
   const address = getIpAddress();
 
@@ -50,7 +54,15 @@ const TeamApplications = () => {
           })
         );
   
-        setPendingApplications(pendingApplicationsData.flat());
+        const flatApps = pendingApplicationsData.flat();
+        setPendingApplications(flatApps);
+
+        // Load pairwise compatibility (applicant vs current leader) for each application
+        try {
+          await loadPairwiseCompatibility(flatApps);
+        } catch (e) {
+          console.error("Failed loading pairwise compatibility:", e);
+        }
       }
   
       const myApplicationsResponse = await axios.get(`http://${address}:8080/student/${authState.uid}/my-applications`);
@@ -68,6 +80,188 @@ const TeamApplications = () => {
     } finally {
       setLoading(false);
     }
+  };
+  // Toggle expand/collapse for score details per application row
+  const toggleExpand = (trid) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(trid)) next.delete(trid);
+      else next.add(trid);
+      return next;
+    });
+  };
+
+  // Determine applicant id from an application object
+  const getApplicantId = (app) => {
+    return (
+      app?.sid ||
+      app?.studentId ||
+      app?.applicantId ||
+      app?.userId ||
+      app?.uid ||
+      app?.studentUid ||
+      null
+    );
+  };
+
+  // Color helper consistent with Dashboard thresholds
+  const getScoreColorClass = (val) => {
+    const num = Number(val);
+    if (!Number.isFinite(num)) return "text-gray-500";
+    if (num >= 75) return "text-green-600";
+    if (num > 50) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  // Load pairwise compatibility for each application by calling the Dashboard matches API
+  // for the applicant and finding the match vs the current leader (authState.uid/email)
+  const loadPairwiseCompatibility = async (apps) => {
+    if (!Array.isArray(apps) || apps.length === 0) return;
+
+    // Group apps by applicant id, skip those without id
+    const byApplicant = apps.reduce((acc, app) => {
+      const aid = getApplicantId(app);
+      if (!aid) return acc;
+      if (!acc[aid]) acc[aid] = [];
+      acc[aid].push(app);
+      return acc;
+    }, {});
+
+    const entries = [];
+    const leaderId = authState?.uid;
+    const leaderEmail = authState?.email?.toLowerCase?.();
+
+    // Prepare auth header (align with Dashboard)
+    const headers = authState?.token ? { Authorization: `Bearer ${authState.token}` } : undefined;
+
+    // Fetch leader's matches once as a fallback source
+    let leaderMatches = [];
+    try {
+      const leaderRes = await axios.get(
+        `http://${address}:8080/api/survey/match/user/${leaderId}`,
+        { headers }
+      );
+      leaderMatches = Array.isArray(leaderRes.data) ? leaderRes.data : [];
+    } catch (e) {
+      console.warn("Could not load leader matches; continuing without fallback.", e);
+    }
+
+    // Index leader matches by common identifiers for fast lookup
+    const leaderIndex = leaderMatches.reduce(
+      (acc, m) => {
+        const ids = [m?.id, m?.uid, m?.userId, m?.matchedUserId, m?.user?.id]
+          .filter(Boolean)
+          .map(String);
+        const emails = [m?.email, m?.user?.email]
+          .filter(Boolean)
+          .map((e) => String(e).toLowerCase());
+        const names = [m?.name, m?.user?.name]
+          .filter(Boolean)
+          .map((n) => String(n).trim().toLowerCase());
+
+        ids.forEach((id) => {
+          if (!acc.byId[id] || (m.overallScore ?? 0) > (acc.byId[id].overallScore ?? 0)) acc.byId[id] = m;
+        });
+        emails.forEach((em) => {
+          if (!acc.byEmail[em] || (m.overallScore ?? 0) > (acc.byEmail[em].overallScore ?? 0)) acc.byEmail[em] = m;
+        });
+        names.forEach((nm) => {
+          if (!acc.byName[nm] || (m.overallScore ?? 0) > (acc.byName[nm].overallScore ?? 0)) acc.byName[nm] = m;
+        });
+        return acc;
+      },
+      { byId: {}, byEmail: {}, byName: {} }
+    );
+
+    // First, handle applications that DO NOT have an applicant id using leader's matches only
+    const appsWithoutId = apps.filter((app) => !getApplicantId(app));
+    const fallbackEntries = [];
+    for (const app of appsWithoutId) {
+      const appEmail = (app?.studentEmail || app?.email || app?.contactEmail || app?.user?.email || "")
+        .toString()
+        .toLowerCase();
+      const appName = (app?.studentName || app?.name || app?.user?.name || "")
+        .toString()
+        .trim()
+        .toLowerCase();
+      let picked = null;
+      if (appEmail && leaderIndex.byEmail[appEmail]) picked = leaderIndex.byEmail[appEmail];
+      else if (appName && leaderIndex.byName[appName]) picked = leaderIndex.byName[appName];
+
+      if (picked) {
+        fallbackEntries.push([
+          app?.trid,
+          {
+            overall: picked.overallScore,
+            skill: picked.skillScore,
+            personality: picked.personalityScore,
+            interest: picked.projectInterestScore,
+          },
+        ]);
+      }
+    }
+
+    // Then proceed with applications that have applicant ids
+    await Promise.all(
+      Object.entries(byApplicant).map(async ([applicantId, applicantApps]) => {
+        try {
+          const res = await axios.get(
+            `http://${address}:8080/api/survey/match/user/${applicantId}`,
+            { headers }
+          );
+          const matches = Array.isArray(res.data) ? res.data : [];
+
+          // Find the specific match vs leader (by id or by email)
+          const leaderMatch = matches.find((m) => {
+            const mid = m?.id || m?.uid || m?.userId || null;
+            const memail = m?.email ? String(m.email).toLowerCase() : null;
+            return (leaderId && mid && String(mid) === String(leaderId)) || (leaderEmail && memail && memail === leaderEmail);
+          });
+
+          // If not found via applicant->leader, try leader->applicant using applicant id/email/name
+          let fallbackMatch = null;
+          if (!leaderMatch) {
+            // derive applicant keys from the first app (same applicant for this group)
+            const sampleApp = applicantApps[0] || {};
+            const appId = getApplicantId(sampleApp);
+            const appEmail = (sampleApp?.studentEmail || sampleApp?.email || sampleApp?.contactEmail || sampleApp?.user?.email || "")
+              .toString()
+              .toLowerCase();
+            const appName = (sampleApp?.studentName || sampleApp?.name || sampleApp?.user?.name || "")
+              .toString()
+              .trim()
+              .toLowerCase();
+
+            if (appId && leaderIndex.byId[String(appId)]) fallbackMatch = leaderIndex.byId[String(appId)];
+            else if (appEmail && leaderIndex.byEmail[appEmail]) fallbackMatch = leaderIndex.byEmail[appEmail];
+            else if (appName && leaderIndex.byName[appName]) fallbackMatch = leaderIndex.byName[appName];
+          }
+
+          const picked = leaderMatch || fallbackMatch || null;
+
+          const scores = picked
+            ? {
+                overall: picked.overallScore,
+                skill: picked.skillScore,
+                personality: picked.personalityScore,
+                interest: picked.projectInterestScore,
+              }
+            : null;
+
+          // Assign the same pairwise result to all applications from this applicant
+          applicantApps.forEach((app) => {
+            const trid = app?.trid;
+            if (trid != null) entries.push([trid, scores]);
+          });
+        } catch (err) {
+          console.error(`Failed to load matches for applicant ${applicantId}`, err);
+          applicantApps.forEach((app) => entries.push([app?.trid, null]));
+        }
+      })
+    );
+
+    const resultMap = { ...Object.fromEntries(fallbackEntries), ...Object.fromEntries(entries) };
+    setPairwiseScoresByTrid((prev) => ({ ...prev, ...resultMap }));
   };
 
   const handleInviteResponse = async (invitationId, isAccepted) => {
@@ -197,37 +391,100 @@ const TeamApplications = () => {
                 </thead>
                 <tbody className="text-center">
                 {pendingApplications.length > 0 ? (
-                  pendingApplications.map((app) => (
-                    <tr key={app.trid} className="hover:bg-gray-100">
-                      <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.studentName || "Unknown"}</td>
-                      <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.groupName || "No Team Name"}</td>
-                      <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.classDescription || "No Class Info"}</td>
-                      <td className="border border-gray-300 px-6 py-3 text-gray-900">
-                        <p className="font-semibold">{app.role}</p> 
-                        <p className="text-gray-700">{app.reason}</p>
-                      </td>
-                      <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.compatibilityScore ? `${app.compatibilityScore}%` : "N/A"}</td>
-                      <td className="border border-gray-300 px-6 py-3 text-center">
-                        <div className="flex flex-row justify-center gap-2">
-                          <button
-                            className="min-w-24 h-10 flex items-center justify-center bg-white border border-green-500 px-3 py-2 rounded-lg hover:bg-green-100 transition-all"
-                            onClick={() => {
-                              setSelectedAppId(app.trid);
-                              setIsModalOpen(true);
-                            }}
-                          >
-                            <Check className="h-4 w-4 text-green-500 mr-1" /> Accept
-                          </button>
-                          <button
-                            className="min-w-24 h-10 flex items-center justify-center bg-white border border-red-500 px-3 py-2 rounded-lg hover:bg-red-100 transition-all"
-                            onClick={() => setRejectModal({ isOpen: true, recruitmentId: app.trid })}
-                          >
-                            <X className="h-4 w-4 text-red-500 mr-1" /> Reject
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  pendingApplications.map((app) => {
+                    const pair = pairwiseScoresByTrid?.[app.trid];
+                    const isExpanded = expandedRows.has(app.trid);
+                    return (
+                      <tr key={app.trid} className="hover:bg-gray-100">
+                        <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.studentName || "Unknown"}</td>
+                        <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.groupName || "No Team Name"}</td>
+                        <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.classDescription || "No Class Info"}</td>
+                        <td className="border border-gray-300 px-6 py-3 text-gray-900">
+                          <p className="font-semibold">{app.role}</p>
+                          <p className="text-gray-700">{app.reason}</p>
+                        </td>
+                        <td className="border border-gray-300 px-6 py-3 text-gray-900 text-left">
+                          {pair ? (
+                            <div className="space-y-1">
+                              {/* Always show Overall */}
+                              <div className="flex items-center gap-2">
+                                <div>
+                                  <span className="font-semibold">Overall Score: </span>
+                                  <span className={getScoreColorClass(pair.overall)}>
+                                    {Number.isFinite(Number(pair.overall)) ? `${Number(pair.overall).toFixed(2)}%` : "N/A"}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  className="text-blue-600 hover:underline text-sm ml-2"
+                                  onClick={() => toggleExpand(app.trid)}
+                                >
+                                  {isExpanded ? "View less" : "View more"}
+                                </button>
+                              </div>
+
+                              {/* Show details only when expanded */}
+                              {isExpanded && (
+                                <div className="space-y-1 mt-1">
+                                  <div>
+                                    <span className="font-semibold">Skill: </span>
+                                    <span className={getScoreColorClass(pair.skill)}>
+                                      {Number.isFinite(Number(pair.skill)) ? `${Number(pair.skill).toFixed(2)}%` : "N/A"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Personality: </span>
+                                    <span className={getScoreColorClass(pair.personality)}>
+                                      {Number.isFinite(Number(pair.personality)) ? `${Number(pair.personality).toFixed(2)}%` : "N/A"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold">Interest: </span>
+                                    <span className={getScoreColorClass(pair.interest)}>
+                                      {Number.isFinite(Number(pair.interest)) ? `${Number(pair.interest).toFixed(2)}%` : "N/A"}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="space-y-1">
+                              {/* Fallback: only overall available */}
+                              {Number.isFinite(Number(app.compatibilityScore)) ? (
+                                <div>
+                                  <span className="font-semibold">Overall Score: </span>
+                                  <span className={getScoreColorClass(app.compatibilityScore)}>
+                                    {`${Number(app.compatibilityScore).toFixed(2)}%`}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-500 italic">N/A</span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                        <td className="border border-gray-300 px-6 py-3 text-center">
+                          <div className="flex flex-row justify-center gap-2">
+                            <button
+                              className="min-w-24 h-10 flex items-center justify-center bg-white border border-green-500 px-3 py-2 rounded-lg hover:bg-green-100 transition-all"
+                              onClick={() => {
+                                setSelectedAppId(app.trid);
+                                setIsModalOpen(true);
+                              }}
+                            >
+                              <Check className="h-4 w-4 text-green-500 mr-1" /> Accept
+                            </button>
+                            <button
+                              className="min-w-24 h-10 flex items-center justify-center bg-white border border-red-500 px-3 py-2 rounded-lg hover:bg-red-100 transition-all"
+                              onClick={() => setRejectModal({ isOpen: true, recruitmentId: app.trid })}
+                            >
+                              <X className="h-4 w-4 text-red-500 mr-1" /> Reject
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan="6" className="text-center bg-gray-100 px-6 py-3 text-gray-900">

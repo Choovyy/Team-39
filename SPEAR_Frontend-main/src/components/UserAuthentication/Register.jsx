@@ -188,7 +188,7 @@ const Register = () => {
         <div className="main-content grid grid-cols-1 bg-teal w-[928px] h-[696px] rounded-lg items-center drop-shadow-2xl">
           {/* Header */}
           <div className="header flex items-center justify-center bg-white rounded-t-lg w-full h-full">
-            <img src={logo} alt="logo" className="w-20 h-20 object-contain" />
+            <img src={logo} alt="logo" className="w-10 h-10 object-contain" />
             <p className="text-md font-medium pl-4">
               Team Collaboration with Predictive Matching Platform
             </p>
