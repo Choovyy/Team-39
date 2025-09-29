@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
+import { Info } from 'lucide-react';
 import axios from 'axios';
 import AuthContext from '../../../services/AuthContext';
 import LogoutButton from '../../../components/Auth/LogoutButton';
@@ -231,10 +232,12 @@ const Dashboard = () => {
                   </div>
                   <button
                     type="button"
-                    className="px-2.5 py-1 text-xs rounded border border-teal text-teal hover:bg-teal hover:text-white transition whitespace-nowrap shrink-0"
+                    aria-label="View compatibility details"
+                    title="View details"
+                    className="p-1 rounded text-teal hover:bg-teal/10 transition inline-flex items-center justify-center"
                     onClick={() => { setSelectedMatch(m); setModalOpen(true); }}
                   >
-                    View More
+                    <Info className="h-5 w-5" />
                   </button>
                 </div>
 

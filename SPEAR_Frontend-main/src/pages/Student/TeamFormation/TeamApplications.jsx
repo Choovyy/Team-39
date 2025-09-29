@@ -5,7 +5,7 @@ import RejectModal from "../../../components/Modals/RejectModal";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
-import { Check, X } from "lucide-react";
+import { Check, X, Info } from "lucide-react";
 
 const TeamApplications = () => {
   const { authState, storeEncryptedId, getDecryptedId } = useContext(AuthContext); 
@@ -22,6 +22,8 @@ const TeamApplications = () => {
   const [pairwiseScoresByTrid, setPairwiseScoresByTrid] = useState({});
   // Track expanded rows for showing detailed scores
   const [expandedRows, setExpandedRows] = useState(new Set());
+  // Info modal for compatibility details
+  const [infoModal, setInfoModal] = useState({ isOpen: false, scores: null, name: "" });
 
   const address = getIpAddress();
 
@@ -343,6 +345,110 @@ const TeamApplications = () => {
     }
   };
 
+  // Lightweight modal to show compatibility breakdown
+  const InfoModal = ({ isOpen, onClose, scores, title }) => {
+    if (!isOpen) return null;
+    useEffect(() => {
+      if (!isOpen) return;
+      const onKey = (e) => {
+        if (e.key === "Escape") {
+          onClose?.();
+        }
+      };
+      window.addEventListener("keydown", onKey);
+      return () => window.removeEventListener("keydown", onKey);
+    }, [isOpen, onClose]);
+    const fields = [
+      { label: "Personality", val: scores?.personality },
+      { label: "Skill", val: scores?.skill },
+      { label: "Interest", val: scores?.interest },
+    ];
+    const overall = Number(scores?.overall);
+    const overallColor = Number.isFinite(overall)
+      ? overall >= 75
+        ? "text-green-700"
+        : overall > 50
+        ? "text-yellow-700"
+        : "text-red-700"
+      : "text-gray-600";
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+        onMouseDown={onClose}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div
+          className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div className="mb-4 flex items-start justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-800">Compatibility Details</h2>
+              {title && <p className="text-sm text-gray-500">{title}</p>}
+            </div>
+            <button
+              onClick={onClose}
+              className="rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              aria-label="Close details"
+            >
+              ✖
+            </button>
+          </div>
+          <div className={`mb-3 text-2xl font-bold ${overallColor}`}>
+            {Number.isFinite(overall) ? `${overall.toFixed(2)}% Match` : "N/A"}
+          </div>
+          <div className="rounded-lg border border-gray-200 p-4">
+            {fields.map(({ label, val }) => {
+              const num = Number(val);
+              const ok = Number.isFinite(num);
+              const pct = ok ? Math.max(0, Math.min(100, num)) : 0;
+              const textColor = ok
+                ? num >= 75
+                  ? "text-green-600"
+                  : num > 50
+                  ? "text-yellow-600"
+                  : "text-red-600"
+                : "text-gray-500";
+              const barColor = ok
+                ? num >= 75
+                  ? "bg-green-600"
+                  : num > 50
+                  ? "bg-yellow-600"
+                  : "bg-red-600"
+                : "bg-gray-300";
+              return (
+                <div key={label} className="mb-3 last:mb-0">
+                  <div className={`text-base font-medium ${textColor}`}>
+                    {label}: {ok ? `${num.toFixed(2)}%` : "N/A"}
+                  </div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+                    <div
+                      className={`h-full ${barColor}`}
+                      style={{ width: `${pct}%` }}
+                      aria-valuenow={pct}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      role="progressbar"
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4 flex justify-end">
+            <button
+              className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+              onClick={onClose}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -395,7 +501,8 @@ const TeamApplications = () => {
                     const pair = pairwiseScoresByTrid?.[app.trid];
                     const isExpanded = expandedRows.has(app.trid);
                     return (
-                      <tr key={app.trid} className="hover:bg-gray-100">
+                      <React.Fragment key={app.trid}>
+                      <tr className="hover:bg-gray-100">
                         <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.studentName || "Unknown"}</td>
                         <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.groupName || "No Team Name"}</td>
                         <td className="border border-gray-300 px-6 py-3 text-gray-900">{app.classDescription || "No Class Info"}</td>
@@ -409,43 +516,22 @@ const TeamApplications = () => {
                               {/* Always show Overall */}
                               <div className="flex items-center gap-2">
                                 <div>
-                                  <span className="font-semibold">Overall Score: </span>
                                   <span className={getScoreColorClass(pair.overall)}>
-                                    {Number.isFinite(Number(pair.overall)) ? `${Number(pair.overall).toFixed(2)}%` : "N/A"}
+                                    {Number.isFinite(Number(pair.overall)) ? `${Number(pair.overall).toFixed(2)}% Match` : "N/A"}
                                   </span>
                                 </div>
                                 <button
                                   type="button"
-                                  className="text-blue-600 hover:underline text-sm ml-2"
-                                  onClick={() => toggleExpand(app.trid)}
+                                  aria-label="View compatibility details"
+                                  title="View details"
+                                  className="ml-2 inline-flex items-center justify-center rounded p-1 text-gray-600 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+                                  onClick={() => setInfoModal({ isOpen: true, scores: pair, name: app.studentName || "Applicant" })}
                                 >
-                                  {isExpanded ? "View less" : "View more"}
+                                  <Info className="h-4 w-4" />
                                 </button>
                               </div>
 
-                              {/* Show details only when expanded */}
-                              {isExpanded && (
-                                <div className="space-y-1 mt-1">
-                                  <div>
-                                    <span className="font-semibold">Skill: </span>
-                                    <span className={getScoreColorClass(pair.skill)}>
-                                      {Number.isFinite(Number(pair.skill)) ? `${Number(pair.skill).toFixed(2)}%` : "N/A"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="font-semibold">Personality: </span>
-                                    <span className={getScoreColorClass(pair.personality)}>
-                                      {Number.isFinite(Number(pair.personality)) ? `${Number(pair.personality).toFixed(2)}%` : "N/A"}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <span className="font-semibold">Interest: </span>
-                                    <span className={getScoreColorClass(pair.interest)}>
-                                      {Number.isFinite(Number(pair.interest)) ? `${Number(pair.interest).toFixed(2)}%` : "N/A"}
-                                    </span>
-                                  </div>
-                                </div>
-                              )}
+                              {/* Details are rendered in a separate row below to avoid changing this row's height */}
                             </div>
                           ) : (
                             <div className="space-y-1">
@@ -454,7 +540,7 @@ const TeamApplications = () => {
                                 <div>
                                   <span className="font-semibold">Overall Score: </span>
                                   <span className={getScoreColorClass(app.compatibilityScore)}>
-                                    {`${Number(app.compatibilityScore).toFixed(2)}%`}
+                                    {`${Number(app.compatibilityScore).toFixed(2)}% Match`}
                                   </span>
                                 </div>
                               ) : (
@@ -483,6 +569,8 @@ const TeamApplications = () => {
                           </div>
                         </td>
                       </tr>
+                      {/* Details row removed: details are shown in a modal instead */}
+                      </React.Fragment>
                     );
                   })
                 ) : (
@@ -625,6 +713,13 @@ const TeamApplications = () => {
           )}
         </div>
       </div>
+      {/* Info Modal */}
+      <InfoModal
+        isOpen={infoModal.isOpen}
+        onClose={() => setInfoModal({ isOpen: false, scores: null, name: "" })}
+        scores={infoModal.scores}
+        title={infoModal.name}
+      />
       <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );

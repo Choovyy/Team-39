@@ -78,7 +78,7 @@ const ViewPersonality = ({ open, onClose, name, personality }) => {
           {description || 'No personality description available.'}
           {curated && curated.suggestions?.length > 0 && (
             <div className="mt-3">
-              <p className="text-sm font-medium text-teal">Best ways to contribute</p>
+              <p className="text-sm font-bold text-teal">Best ways to contribute</p>
               <ul className="list-disc pl-5 mt-1 space-y-1 text-sm">
                 {curated.suggestions.map((s, i) => (
                   <li key={i}>{s}</li>
