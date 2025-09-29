@@ -3,6 +3,7 @@ import axios from 'axios';
 import AuthContext from '../../../services/AuthContext';
 import LogoutButton from '../../../components/Auth/LogoutButton';
 import Navbar from '../../../components/Navbar/Navbar';
+import ViewPersonality from '../../../components/Modals/ViewPersonality';
 
 /* Dashboard page: fetches AI match recommendations and displays them.
    NOTE (backend): match objects should include contact fields:
@@ -25,6 +26,10 @@ const Dashboard = () => {
   const [roleFilter, setRoleFilter] = useState("");
   const [interestFilter, setInterestFilter] = useState("");
   const address = window.location.hostname;
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedMatch, setSelectedMatch] = useState(null);
 
   // Normalize contact values into safe hrefs for anchors
   
@@ -207,21 +212,30 @@ const Dashboard = () => {
                 className="relative overflow-hidden border rounded-lg shadow-sm p-4 bg-white hover:shadow-md transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2"
                 aria-labelledby={`match-${idx}-name`}
               >
-                <div className="flex items-center gap-3 mb-2">
-                  {m.profilePicture ? (
-                    <img src={m.profilePicture} alt={m.name} className="w-12 h-12 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-teal flex items-center justify-center text-white font-semibold">
-                      {m.name ? m.name.charAt(0).toUpperCase() : '?'}
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {m.profilePicture ? (
+                      <img src={m.profilePicture} alt={m.name} className="w-12 h-12 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-teal flex items-center justify-center text-white font-semibold">
+                        {m.name ? m.name.charAt(0).toUpperCase() : '?'}
+                      </div>
+                    )}
+                    <div>
+                      <h2 id={`match-${idx}-name`} className="font-semibold text-teal">{m.name || 'Unknown User'}</h2>
+                      <p className="text-sm text-gray-500">Overall Score: <span style={{
+                        color: m.overallScore >= 75 ? '#22c55e' : m.overallScore > 50 ? '#fbbf24' : '#ef4444',
+                        fontWeight: 700
+                      }}>{m.overallScore?.toFixed?.(2) ?? 'N/A'}%</span></p>
                     </div>
-                  )}
-                  <div>
-                    <h2 id={`match-${idx}-name`} className="font-semibold text-teal">{m.name || 'Unknown User'}</h2>
-                    <p className="text-sm text-gray-500">Overall Score: <span style={{
-                      color: m.overallScore >= 75 ? '#22c55e' : m.overallScore > 50 ? '#fbbf24' : '#ef4444',
-                      fontWeight: 700
-                    }}>{m.overallScore?.toFixed?.(2) ?? 'N/A'}%</span></p>
                   </div>
+                  <button
+                    type="button"
+                    className="px-2.5 py-1 text-xs rounded border border-teal text-teal hover:bg-teal hover:text-white transition whitespace-nowrap shrink-0"
+                    onClick={() => { setSelectedMatch(m); setModalOpen(true); }}
+                  >
+                    View More
+                  </button>
                 </div>
 
                 <div className="text-sm space-y-1 mb-2">
@@ -363,6 +377,12 @@ const Dashboard = () => {
             Refresh Matches
           </button>
         </div>
+        <ViewPersonality
+          open={modalOpen}
+          onClose={() => { setModalOpen(false); setSelectedMatch(null); }}
+          name={selectedMatch?.name}
+          personality={selectedMatch?.personality}
+        />
       </div>
     </div>
   );

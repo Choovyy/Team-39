@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logo from "../../assets/imgs/logo-light.png";
+import logo from "../../assets/imgs/cc_logo_dark.png";
 import dashboardIcon from "../../assets/icons/dashboard-icon.svg";
 import teamIcon from "../../assets/icons/teams-icon.svg";
 import settingsIcon from "../../assets/icons/settings-icon.svg";
