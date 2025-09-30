@@ -193,12 +193,20 @@ const Dashboard = () => {
         {!loading && filteredMatches?.length === 0 && !error && (
           <p className="text-gray-500">No matches found.</p>
         )}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2">
           {filteredMatches?.map((m, idx) => {
             const email = m.email;
             const outlookHref = buildOutlookComposeLink(email, m);
             const githubHref = normalizeLink(m.github || m.githubUrl || m.githubHandle, 'github');
             const facebookHref = normalizeLink(m.facebook || m.facebookUrl || m.facebookHandle, 'facebook');
+            const roleLabel = Array.isArray(m.preferredRoles)
+              ? (typeof m.preferredRoles[0] === 'object' && m.preferredRoles[0]?.role
+                  ? m.preferredRoles[0].role
+                  : m.preferredRoles[0])
+              : (m.preferredRoles || '');
+            const skillsList = Array.isArray(m.technicalSkills)
+              ? m.technicalSkills.map(ts => (typeof ts === 'object' && ts.skill ? ts.skill : ts)).filter(Boolean)
+              : [];
 
             return (
               <div
@@ -210,71 +218,32 @@ const Dashboard = () => {
                 onFocus={() => setHoveredIndex(idx)}
                 onBlur={() => setHoveredIndex(null)}
                 // UI change: add overflow-hidden so the sliding panel is clipped inside the card (stays within card bounds)
-                className="relative overflow-hidden border rounded-lg shadow-sm p-4 bg-white hover:shadow-md transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2"
+                className="relative overflow-hidden border rounded-xl shadow-sm p-5 bg-white hover:shadow-md transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2"
                 aria-labelledby={`match-${idx}-name`}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3">
+                {/* Match badge */}
+                <div className="absolute top-4 right-4 text-right">
+                  <div className="text-amber-500 font-bold text-lg">
+                    {m.overallScore?.toFixed?.(0) ?? '—'}% Match
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-3 pr-28">
+                  <div className="flex items-start gap-3">
                     {m.profilePicture ? (
-                      <img src={m.profilePicture} alt={m.name} className="w-12 h-12 rounded-full object-cover" />
+                      <img src={m.profilePicture} alt={m.name} className="w-10 h-10 rounded-full object-cover" />
                     ) : (
-                      <div className="w-12 h-12 rounded-full bg-teal flex items-center justify-center text-white font-semibold">
+                      <div className="w-10 h-10 rounded-full bg-teal flex items-center justify-center text-white font-semibold">
                         {m.name ? m.name.charAt(0).toUpperCase() : '?'}
                       </div>
                     )}
-                    <div>
-                      <h2 id={`match-${idx}-name`} className="font-semibold text-teal">{m.name || 'Unknown User'}</h2>
-                      <p className="text-sm text-gray-500">Overall Score: <span style={{
-                        color: m.overallScore >= 75 ? '#22c55e' : m.overallScore > 50 ? '#fbbf24' : '#ef4444',
-                        fontWeight: 700
-                      }}>{m.overallScore?.toFixed?.(2) ?? 'N/A'}%</span></p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    aria-label="View compatibility details"
-                    title="View details"
-                    className="p-1 rounded text-teal hover:bg-teal/10 transition inline-flex items-center justify-center"
-                    onClick={() => { setSelectedMatch(m); setModalOpen(true); }}
-                  >
-                    <Info className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="text-sm space-y-1 mb-2">
-                  <p><span className="font-medium">Personality:</span> {m.personality ? m.personality.replace(/Scores: C=\d+, I=\d+, P=\d+, D=\d+\.?/g, '').trim() : 'No Personality'}</p>
-                  <p><span className="font-medium">Skills:</span> {
-                    Array.isArray(m.technicalSkills)
-                      ? m.technicalSkills.map(ts => typeof ts === 'object' && ts.skill ? ts.skill : ts).join(', ')
-                      : 'No Skills'
-                  }</p>
-                  <p><span className="font-medium">Roles:</span> {
-                    Array.isArray(m.preferredRoles)
-                      ? m.preferredRoles.map(r => typeof r === 'object' && r.role ? r.role : r).join(', ')
-                      : 'No Role'
-                  }</p>
-                </div>
-
-                {/* Sliding info panel: appears within the card (clipped by overflow-hidden) */}
-                <div
-                  // small fixed height so it doesn't push layout; absolute but clipped by parent overflow-hidden
-                  className={`absolute left-0 right-0 bottom-0 border-t bg-gray-50/95 p-3 transition-all duration-300 ease-out
-                    ${hoveredIndex === idx ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-full opacity-0 pointer-events-none'}`}
-                  style={{ backdropFilter: 'saturate(120%) blur(4px)' }}
-                >
-                  <div className="flex items-center justify-between">
-                     <div className="text-sm text-gray-700 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Email:</span>
-                        {outlookHref ? (
-                          <a
-                            href={outlookHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={`Email ${m.name} via Outlook`}
-                            aria-label={`Email ${m.name} via Outlook`}
-                            className="p-1 rounded hover:bg-gray-100 inline-flex"
-                          >
+                    <div className="flex-1 min-w-0">
+                      <h2 id={`match-${idx}-name`} className="font-semibold text-teal text-lg">{m.name || 'Unknown User'}</h2>
+                      <p className="text-sm text-gray-500">{roleLabel || 'Student'}</p>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="text-xs text-gray-500 font-medium">Socials:</span>
+                        {outlookHref && (
+                          <a href={outlookHref} target="_blank" rel="noopener noreferrer" className="p-1 rounded hover:bg-gray-100" title={`Email ${m.name} via Outlook`} aria-label={`Email ${m.name} via Outlook`}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 64 64" aria-hidden="true">
                               <rect x="20" y="10" width="38" height="44" rx="4" fill="#0A64AD"/>
                               <path d="M6 20h34c1.657 0 3 1.343 3 3v18c0 1.657-1.343 3-3 3H6c-1.657 0-3-1.343-3-3V23c0-1.657 1.343-3 3-3z" fill="#ffffff" stroke="#0A64AD" strokeWidth="2"/>
@@ -283,92 +252,105 @@ const Dashboard = () => {
                               <text x="46" y="36" textAnchor="middle" fontSize="14" fontFamily="Segoe UI, Arial" fontWeight="700" fill="#ffffff">O</text>
                             </svg>
                           </a>
-                        ) : <span className="text-gray-400">N/A</span>}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">GitHub:</span>
+                        )}
                         {githubHref ? (
-                          <a
-                            href={githubHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Open GitHub profile"
-                            aria-label="Open GitHub profile"
-                            className="p-1 rounded hover:bg-gray-100 inline-flex"
-                          >
+                          <a href={githubHref} target="_blank" rel="noopener noreferrer" className="p-1 rounded hover:bg-gray-100" title="Open GitHub profile" aria-label="Open GitHub profile">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="11" fill="#181717" />
                               <path d="M9.25 17.75c-.1-.3-.17-.77-.17-1.38 0-1.02.35-1.68.75-2.02-2.48-.28-3.83-1.14-3.83-3.02 0-.84.33-1.54.88-2.08-.09-.29-.38-1.07.08-2.02 0 0 .7-.23 2.3.88a8.1 8.1 0 0 1 4.18 0c1.6-1.11 2.3-.88 2.3-.88.46.95.17 1.73.08 2.02.55.54.88 1.24.88 2.08 0 1.88-1.36 2.74-3.84 3.02.53.45.82 1.15.82 2.16 0 .86-.06 1.55-.06 1.76 0 .23-.17.5-.64.42A6.43 6.43 0 0 1 12 18.5a6.43 6.43 0 0 1-1.69-.22c-.47.08-.64-.19-.64-.42Z" fill="#fff"/>
                             </svg>
                           </a>
                         ) : (
-    <span className="p-1 inline-flex items-center justify-center opacity-30 leading-none" title="No GitHub provided">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="11" fill="#181717" />
-        <path d="M9.25 17.75c-.1-.3-.17-.77-.17-1.38 0-1.02.35-1.68.75-2.02-2.48-.28-3.83-1.14-3.83-3.02 0-.84.33-1.54.88-2.08-.09-.29-.38-1.07.08-2.02 0 0 .7-.23 2.3.88a8.1 8.1 0 0 1 4.18 0c1.6-1.11 2.3-.88 2.3-.88.46.95.17 1.73.08 2.02.55.54.88 1.24.88 2.08 0 1.88-1.36 2.74-3.84 3.02.53.45.82 1.15.82 2.16 0 .86-.06 1.55-.06 1.76 0 .23-.17.5-.64.42A6.43 6.43 0 0 1 12 18.5a6.43 6.43 0 0 1-1.69-.22c-.47.08-.64-.19-.64-.42Z" fill="#fff"/>
-      </svg>
-    </span>
-  )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Facebook:</span>
+                          <span className="p-1 opacity-30 cursor-not-allowed" aria-disabled="true" title="No GitHub provided">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                              <circle cx="12" cy="12" r="11" fill="#181717" />
+                              <path d="M9.25 17.75c-.1-.3-.17-.77-.17-1.38 0-1.02.35-1.68.75-2.02-2.48-.28-3.83-1.14-3.83-3.02 0-.84.33-1.54.88-2.08-.09-.29-.38-1.07.08-2.02 0 0 .7-.23 2.3.88a8.1 8.1 0 0 1 4.18 0c1.6-1.11 2.3-.88 2.3-.88.46.95.17 1.73.08 2.02.55.54.88 1.24.88 2.08 0 1.88-1.36 2.74-3.84 3.02.53.45.82 1.15.82 2.16 0 .86-.06 1.55-.06 1.76 0 .23-.17.5-.64.42A6.43 6.43 0 0 1 12 18.5a6.43 6.43 0 0 1-1.69-.22c-.47.08-.64-.19-.64-.42Z" fill="#fff"/>
+                            </svg>
+                          </span>
+                        )}
                         {facebookHref ? (
-                          <a
-                            href={facebookHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Open Facebook profile"
-                            aria-label="Open Facebook profile"
-                            className="p-1 rounded hover:bg-gray-100 inline-flex"
-                          >
+                          <a href={facebookHref} target="_blank" rel="noopener noreferrer" className="p-1 rounded hover:bg-gray-100" title="Open Facebook profile" aria-label="Open Facebook profile">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="11" fill="#1877F2" />
                               <path d="M13.3 8.5H15V6.1c-.3-.04-.98-.1-1.86-.1-1.84 0-3.1 1.15-3.1 3.25v1.8H8v2.3h2.04V19h2.46v-5.65h2.04l.33-2.3h-2.37v-1.6c0-.66.18-1.1 1.8-1.1Z" fill="#fff"/>
                             </svg>
                           </a>
                         ) : (
-                          <span className="p-1 inline-flex items-center justify-center opacity-30 leading-none" title="No Facebook provided">
+                          <span className="p-1 opacity-30 cursor-not-allowed" aria-disabled="true" title="No Facebook provided">
                             <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
                               <circle cx="12" cy="12" r="11" fill="#1877F2" />
-                              <path d="M13.3 8.5H15V6.1c-.3-.04-.98-.1-1.86-.1-1.84 0-3.1 1.15-3.1 3.25v1.8H8v2.3h2.04V19h2.46v-5.65h2.04l.33-2.3h-2.37v-1.6c0-.66.18-1.1 1.8-1.1Z" fill="#fff" />
+                              <path d="M13.3 8.5H15V6.1c-.3-.04-.98-.1-1.86-.1-1.84 0-3.1 1.15-3.1 3.25v1.8H8v2.3h2.04V19h2.46v-5.65h2.04l.33-2.3h-2.37v-1.6c0-.66.18-1.1 1.8-1.1Z" fill="#fff"/>
                             </svg>
                           </span>
                         )}
+                        </div>
+                      </div>
+                  </div>
+                </div>
+
+                <div className="text-sm space-y-3 mb-4">
+                  <p className="text-gray-700">
+                    <span className="font-medium">Personality:</span>{' '}
+                    {m.personality ? m.personality.replace(/Scores: C=\d+, I=\d+, P=\d+, D=\d+\.?/g, '').trim() : 'No Personality'}
+                    {m.personality && (
+                      <button
+                        className="ml-2 text-teal underline underline-offset-2 hover:text-teal/80"
+                        onClick={() => { setSelectedMatch(m); setModalOpen(true); }}
+                      >
+                        View More
+                      </button>
+                    )}
+                  </p>
+
+                  {skillsList.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {skillsList.slice(0, 6).map((skill, i) => (
+                        <span key={i} className="px-3 py-1 text-xs rounded-full bg-gray-100 text-gray-700 border">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* contact slide panel removed to match design; icons shown under name */}
+
+                {/* Score rows */}
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm w-36 whitespace-nowrap">
+                      <span className="font-semibold">Personality:</span>{' '}
+                      <span className="font-bold" style={{ color: '#f59e0b' }}>{m.personalityScore?.toFixed?.(2) ?? '—'}%</span>
+                    </div>
+                    <div className="flex-1 max-w-[300px]">
+                      <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                        <div className="h-full" style={{ backgroundColor: '#fbbf24', width: `${Math.max(0, Math.min(100, Number(m.personalityScore || 0)))}%` }} />
                       </div>
                     </div>
                   </div>
-                </div>
-                {/* end sliding panel */}
 
-                <div className="mt-2 text-xs text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">Skill:</span>
-                    <span style={{
-                      color: m.skillScore >= 75 ? '#22c55e' : m.skillScore > 50 ? '#fbbf24' : '#ef4444',
-                      fontWeight: 700
-                    }}>
-                      {m.skillScore?.toFixed?.(2) ?? '—'}%
-                    </span>
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm w-36 whitespace-nowrap">
+                      <span className="font-semibold">Skill:</span>{' '}
+                      <span className="font-bold" style={{ color: '#22c55e' }}>{m.skillScore?.toFixed?.(2) ?? '—'}%</span>
+                    </div>
+                    <div className="flex-1 max-w-[300px]">
+                      <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                        <div className="h-full" style={{ backgroundColor: '#22c55e', width: `${Math.max(0, Math.min(100, Number(m.skillScore || 0)))}%` }} />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">Personality:</span>
-                    <span style={{
-                      color: m.personalityScore >= 75 ? '#22c55e' : m.personalityScore > 50 ? '#fbbf24' : '#ef4444',
-                      fontWeight: 700
-                    }}>
-                      {m.personalityScore?.toFixed?.(2) ?? '—'}%
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">Interest:</span>
-                    <span style={{
-                      color: m.projectInterestScore >= 75 ? '#22c55e' : m.projectInterestScore > 50 ? '#fbbf24' : '#ef4444',
-                      fontWeight: 700
-                    }}>
-                      {m.projectInterestScore?.toFixed?.(2) ?? '—'}%
-                    </span>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm w-36 whitespace-nowrap">
+                      <span className="font-semibold">Interest:</span>{' '}
+                      <span className="font-bold" style={{ color: '#ef4444' }}>{m.projectInterestScore?.toFixed?.(2) ?? '—'}%</span>
+                    </div>
+                    <div className="flex-1 max-w-[300px]">
+                      <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                        <div className="h-full" style={{ backgroundColor: '#ef4444', width: `${Math.max(0, Math.min(100, Number(m.projectInterestScore || 0)))}%` }} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
