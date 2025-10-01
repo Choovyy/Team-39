@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useContext } from 'react';
+import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../services/AuthContext';
 import axios from 'axios';
@@ -41,9 +42,13 @@ const Survey2 = () => {
       return acc;
     }, {});
   });
-  const [otherSkill, setOtherSkill] = useState('');
-  const [otherSkillLevel, setOtherSkillLevel] = useState(0);
+  // Others (multi)
   const [otherSelected, setOtherSelected] = useState(false);
+  const [otherSkill, setOtherSkill] = useState(''); // composer input
+  const [otherSkillLevel, setOtherSkillLevel] = useState(0); // composer slider
+  const [otherItems, setOtherItems] = useState([]); // [{ skill, masteryLevel }]
+  const [otherError, setOtherError] = useState('');
+  const MAX_OTHERS = 5;
 
   // Load saved data on component mount
   useEffect(() => {
@@ -55,28 +60,31 @@ const Survey2 = () => {
         return acc;
       }, {});
 
+      const others = [];
       savedData.step2.selections.forEach(selection => {
         if (SKILLS.includes(selection.skill)) {
           newSelectedSkills[selection.skill] = {
             selected: true,
             level: selection.masteryLevel || 0
           };
-        } else {
-          setOtherSkill(selection.skill);
-          setOtherSkillLevel(selection.masteryLevel || 0);
-          setOtherSelected(true);
+        } else if (selection.skill && String(selection.skill).trim()) {
+          others.push({ skill: String(selection.skill).trim(), masteryLevel: selection.masteryLevel || 0 });
         }
       });
 
       setSelectedSkills(newSelectedSkills);
+      if (others.length > 0) {
+        setOtherItems(others.slice(0, MAX_OTHERS));
+        setOtherSelected(true);
+      }
     }
   }, []);
 
   const hasAnySelection = useMemo(() => {
     const anyPreset = Object.values(selectedSkills).some((s) => s.selected && s.level > 0);
-    const anyOther = otherSelected && otherSkill.trim().length > 0 && otherSkillLevel > 0;
+    const anyOther = otherSelected && otherItems.length > 0;
     return anyPreset || anyOther;
-  }, [selectedSkills, otherSelected, otherSkill, otherSkillLevel]);
+  }, [selectedSkills, otherSelected, otherItems]);
 
   const toggleSkill = (skill) => {
     setSelectedSkills((prev) => ({
@@ -99,6 +107,27 @@ const Survey2 = () => {
 
   const formatPercent = (v) => `${v}%`;
 
+  const tryAddOther = () => {
+    setOtherError('');
+    const name = (otherSkill || '').trim();
+    const level = parseInt(otherSkillLevel) || 0;
+    if (!name) { setOtherError('Please enter a skill name.'); return; }
+    if (level <= 0) { setOtherError('Please set a mastery level above 0%.'); return; }
+    if (otherItems.length >= MAX_OTHERS) { setOtherError(`You can add up to ${MAX_OTHERS} skills.`); return; }
+    const lc = name.toLowerCase();
+    // Block duplicates across others and prevent adding if it matches a preset label
+    if (otherItems.some(it => it.skill.toLowerCase() === lc)) { setOtherError('That skill is already added.'); return; }
+    if (SKILLS.some(s => s.toLowerCase() === lc)) { setOtherError('This exists in the preset list above. Please select it there.'); return; }
+    const next = [...otherItems, { skill: name, masteryLevel: level }];
+    setOtherItems(next);
+    setOtherSkill('');
+    setOtherSkillLevel(0);
+  };
+
+  const removeOtherAt = (idx) => {
+    setOtherItems(prev => prev.filter((_, i) => i !== idx));
+  };
+
   const handleNext = () => {
     if (!hasAnySelection) return;
 
@@ -109,8 +138,8 @@ const Survey2 = () => {
         selections.push({ skill, masteryLevel: s.level });
       }
     });
-    if (otherSelected && otherSkill.trim() && otherSkillLevel > 0) {
-      selections.push({ skill: otherSkill.trim(), masteryLevel: otherSkillLevel });
+    if (otherSelected && otherItems.length > 0) {
+      selections.push(...otherItems);
     }
 
     // Load previous survey data
@@ -198,26 +227,66 @@ const Survey2 = () => {
             </label>
             {otherSelected && (
               <div className="mt-2">
-                <input
-                  type="text"
-                  value={otherSkill}
-                  onChange={(e) => setOtherSkill(e.target.value)}
-                  placeholder="Enter another skill"
-                  className="w-full border rounded-md p-2 mb-2"
-                />
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={otherSkillLevel}
-                  onChange={(e) => setOtherSkillLevel(parseInt(e.target.value))}
-                  className="w-full"
-                  aria-label="Other skill mastery level"
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Beginner</span>
-                  <span>Expert</span>
+                {/* Composer */}
+                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
+                  <div className="flex-1 w-full">
+                    <input
+                      type="text"
+                      value={otherSkill}
+                      onChange={(e) => setOtherSkill(e.target.value)}
+                      placeholder="Enter another skill"
+                      className="w-full border rounded-md p-2"
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); tryAddOther(); } }}
+                    />
+                    <div className="mt-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={otherSkillLevel}
+                        onChange={(e) => setOtherSkillLevel(parseInt(e.target.value))}
+                        className="w-full"
+                        aria-label="Other skill mastery level"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Beginner</span>
+                        <span>Expert</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={tryAddOther}
+                    className="p-2 bg-teal text-white rounded hover:bg-teal/90 inline-flex items-center justify-center"
+                    disabled={otherItems.length >= MAX_OTHERS}
+                    aria-label="Add other skill"
+                    title={otherItems.length >= MAX_OTHERS ? `Limit reached (${MAX_OTHERS})` : 'Add'}
+                  >
+                    <Plus size={18} />
+                  </button>
                 </div>
+                {otherError && <div className="text-sm text-red-600 mt-2">{otherError}</div>}
+                {/* List */}
+                {otherItems.length > 0 && (
+                  <ul className="mt-3 space-y-2">
+                    {otherItems.map((it, i) => (
+                      <li key={`${it.skill}-${i}`} className="flex items-center justify-between rounded border p-2">
+                        <div>
+                          <div className="font-medium">{it.skill}</div>
+                          <div className="text-xs text-gray-500">Level: {formatPercent(it.masteryLevel)}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeOtherAt(i)}
+                          className="px-2 py-1 text-sm border rounded hover:bg-gray-100"
+                          aria-label={`Remove ${it.skill}`}
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>

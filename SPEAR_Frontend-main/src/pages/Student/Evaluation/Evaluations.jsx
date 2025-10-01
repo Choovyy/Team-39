@@ -90,8 +90,8 @@ const currentEvaluations = evaluations.slice(startIndex, startIndex + evaluation
   return (
     <div className="grid grid-cols-1 md:grid-cols-[256px_1fr] min-h-screen bg-white">
       <Navbar userRole="STUDENT" />
-      <div className="p-8 bg-white shadow-md rounded-md w-full">
-        <h1 className="text-3xl font-bold text-teal mb-6 pt-8">Available Evaluations</h1>
+      <div className="main-content bg-white text-teal px-6 sm:px-12 md:px-20 lg:px-28 pt-8 md:pt-12 w-full">
+        <h1 className="text-2xl font-bold text-teal mb-6">Available Evaluations</h1>
 
         {error && <div className="text-red-500 text-center mb-4">{error}</div>}
 
@@ -146,26 +146,26 @@ const currentEvaluations = evaluations.slice(startIndex, startIndex + evaluation
             </table>
             </div>
             <div className="flex justify-center items-center mt-3 space-x-2">
-  <button
-    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-    disabled={currentPage === 1}
-    className="text-gray-700 px-1 py-1 rounded-lg flex items-center opacity-50 disabled:cursor-not-allowed hover:bg-gray-200"
-  >
-    <ChevronLeft />
-    Previous
-  </button>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="text-gray-700 px-1 py-1 rounded-lg flex items-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200"
+              >
+                <ChevronLeft />
+                Previous
+              </button>
 
-  <span className="text-base font-medium">Page {currentPage} of {totalPages}</span>
+              <span className="text-base font-medium">Page {currentPage} of {totalPages}</span>
 
-  <button
-    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-    disabled={currentPage === totalPages}
-    className="text-gray-700 px-1 py-1 rounded-lg flex items-center opacity-50 disabled:cursor-not-allowed hover:bg-gray-200"
-  >
-    Next
-    <ChevronRight />
-  </button>
-</div>
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="text-gray-700 px-1 py-1 rounded-lg flex items-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200"
+              >
+                Next
+                <ChevronRight />
+              </button>
+            </div>
 
           </div>
         )}

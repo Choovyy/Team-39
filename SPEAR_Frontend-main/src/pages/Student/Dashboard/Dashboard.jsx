@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Info } from 'lucide-react';
+import { Info, RefreshCcw } from 'lucide-react';
 import axios from 'axios';
 import AuthContext from '../../../services/AuthContext';
 import LogoutButton from '../../../components/Auth/LogoutButton';
@@ -27,6 +27,10 @@ const Dashboard = () => {
   const [roleFilter, setRoleFilter] = useState("");
   const [interestFilter, setInterestFilter] = useState("");
   const address = window.location.hostname;
+  
+  // Pagination
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 6;
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -57,6 +61,11 @@ const Dashboard = () => {
   useEffect(() => { fetchMatches(); // initial load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reset to first page whenever filters/search/data change
+  useEffect(() => {
+    setPage(1);
+  }, [search, personalityFilter, skillFilter, roleFilter, interestFilter, matches.length]);
 
   
 
@@ -128,6 +137,19 @@ const Dashboard = () => {
     'Visionary Explorer',
     'Versatile Contributor'
   ];
+  
+  // Pagination helper: build an ellipsis range like: 1 … 4 5 6 … N
+  const getPageRange = (current, total, delta = 1) => {
+    const range = [];
+    const left = Math.max(2, current - delta);
+    const right = Math.min(total - 1, current + delta);
+    range.push(1);
+    if (left > 2) range.push('...');
+    for (let i = left; i <= right; i++) range.push(i);
+    if (right < total - 1) range.push('...');
+    if (total > 1) range.push(total);
+    return range;
+  };
   // Build choices: union of backend list + any unexpected/new ones present in data
   const personalities = Array.from(new Set([
     ...ALL_ARCHETYPES,
@@ -153,6 +175,19 @@ const Dashboard = () => {
     const interestMatch = !interestFilter || (Array.isArray(m.projectInterests) && m.projectInterests.includes(interestFilter));
     return nameMatch && personalityMatch && skillMatch && roleMatch && interestMatch;
   });
+
+  // Sort by highest overallScore first
+  const sortedMatches = [...filteredMatches].sort((a, b) => (Number(b.overallScore) || 0) - (Number(a.overallScore) || 0));
+
+  // Pagination math and window
+  const totalPages = Math.max(1, Math.ceil(sortedMatches.length / PAGE_SIZE));
+  const start = (page - 1) * PAGE_SIZE;
+  const paginatedMatches = sortedMatches.slice(start, start + PAGE_SIZE);
+
+  // Clamp page if filtered data shrinks
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [totalPages, page]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[256px_1fr] min-h-screen">
@@ -187,6 +222,16 @@ const Dashboard = () => {
             {interests.map(i => <option key={i} value={i}>{i}</option>)}
           </select>
           <button type="button" onClick={() => { setSearch(""); setPersonalityFilter(""); setSkillFilter(""); setRoleFilter(""); setInterestFilter(""); }} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-sm rounded border">Clear</button>
+          <button
+            type="button"
+            onClick={fetchMatches}
+            disabled={loading}
+            title="Refresh matches"
+            aria-label="Refresh matches"
+            className={`p-2 rounded border transition ${loading ? 'opacity-60 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+          >
+            <RefreshCcw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
         {loading && <p className="text-gray-600">Loading matches...</p>}
         {error && <div className="text-red-600 mb-4">{String(error)}</div>}
@@ -194,7 +239,7 @@ const Dashboard = () => {
           <p className="text-gray-500">No matches found.</p>
         )}
         <div className="grid gap-6 md:grid-cols-2">
-          {filteredMatches?.map((m, idx) => {
+          {paginatedMatches?.map((m, idx) => {
             const email = m.email;
             const outlookHref = buildOutlookComposeLink(email, m);
             const githubHref = normalizeLink(m.github || m.githubUrl || m.githubHandle, 'github');
@@ -210,7 +255,7 @@ const Dashboard = () => {
 
             return (
               <div
-                key={idx}
+                key={start + idx}
                 // Accessible hover/focus region; keyboard users can tab to reveal panel
                 tabIndex={0}
                 onMouseEnter={() => setHoveredIndex(idx)}
@@ -223,7 +268,7 @@ const Dashboard = () => {
               >
                 {/* Match badge */}
                 <div className="absolute top-4 right-4 text-right">
-                  <div className="text-amber-500 font-bold text-lg">
+                  <div className="text-amber-500 font-semibold text-base">
                     {m.overallScore?.toFixed?.(0) ?? '—'}% Match
                   </div>
                 </div>
@@ -290,14 +335,16 @@ const Dashboard = () => {
 
                 <div className="text-sm space-y-3 mb-4">
                   <p className="text-gray-700">
-                    <span className="font-medium">Personality:</span>{' '}
+                    <span className="font-semibold">Personality:</span>{' '}
                     {m.personality ? m.personality.replace(/Scores: C=\d+, I=\d+, P=\d+, D=\d+\.?/g, '').trim() : 'No Personality'}
                     {m.personality && (
                       <button
-                        className="ml-2 text-teal underline underline-offset-2 hover:text-teal/80"
+                        className="ml-2 inline-flex items-center justify-center text-teal hover:text-teal/80"
                         onClick={() => { setSelectedMatch(m); setModalOpen(true); }}
+                        title="More info"
+                        aria-label={`View more about ${m.name || 'this user'}'s personality`}
                       >
-                        View More
+                        <Info size={18} strokeWidth={2} />
                       </button>
                     )}
                   </p>
@@ -357,11 +404,54 @@ const Dashboard = () => {
             );
           })}
         </div>
-        <div className="mt-6">
-          <button onClick={fetchMatches} className="px-4 py-2 bg-teal text-white rounded hover:bg-teal/90 transition">
-            Refresh Matches
-          </button>
-        </div>
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-2 select-none">
+            <button
+              type="button"
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className={`px-3 py-1.5 text-sm rounded border ${
+                page === 1 ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-100'
+              }`}
+              aria-label="Previous page"
+            >
+              Prev
+            </button>
+
+            {getPageRange(page, totalPages, 1).map((item, i) => (
+              item === '...'
+                ? <span key={`dots-${i}`} className="px-2 text-sm text-gray-500">…</span>
+                : (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setPage(item)}
+                    className={`min-w-9 px-3 py-1.5 text-sm rounded border ${
+                      page === item ? 'bg-teal text-white border-teal' : 'hover:bg-gray-100'
+                    }`}
+                    aria-current={page === item ? 'page' : undefined}
+                    aria-label={`Page ${item}`}
+                  >
+                    {item}
+                  </button>
+                )
+            ))}
+
+            <button
+              type="button"
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className={`px-3 py-1.5 text-sm rounded border ${
+                page === totalPages ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'hover:bg-gray-100'
+              }`}
+              aria-label="Next page"
+            >
+              Next
+            </button>
+          </div>
+        )}
+        
         <ViewPersonality
           open={modalOpen}
           onClose={() => { setModalOpen(false); setSelectedMatch(null); }}
