@@ -198,6 +198,7 @@ const TeamApplications = () => {
             skill: picked.skillScore,
             personality: picked.personalityScore,
             interest: picked.projectInterestScore,
+            personalityDescription: picked.personality,
           },
         ]);
       }
@@ -247,6 +248,7 @@ const TeamApplications = () => {
                 skill: picked.skillScore,
                 personality: picked.personalityScore,
                 interest: picked.projectInterestScore,
+                personalityDescription: picked.personality,
               }
             : null;
 
@@ -345,6 +347,57 @@ const TeamApplications = () => {
     }
   };
 
+  // Helper: personality title (first phrase before '(' or '.')
+  const getPersonalityTitle = (p) => {
+    if(!p) return '';
+    return p.split('(')[0].split('.')[0].trim();
+  };
+
+  // Curated, human-friendly descriptions for archetypes used across the app
+  const ARCHETYPE_COPY = {
+    'Versatile Contributor': {
+      summary: 'Balanced, reliable teammate who adapts to what the project needs and keeps work moving.',
+      suggestions: [
+        'Pick up tasks across the stack and connect gaps between roles',
+        'Coordinate handoffs and keep the team unblocked',
+        'Write clear notes and tidy up details others miss'
+      ]
+    },
+    'Structured Innovator': {
+      summary: 'Systematic problem-solver who brings new ideas but grounds them in process and structure.',
+      suggestions: [
+        'Design the approach, standards, and checklists for the team',
+        'Prototype features and turn them into maintainable patterns',
+        'Own code quality, testing, and documentation'
+      ]
+    },
+    'Agile Collaborator': {
+      summary: 'Fast, communicative teammate who keeps momentum high and aligns people quickly.',
+      suggestions: [
+        'Facilitate standups and clarify next steps',
+        'Pair program to unblock teammates',
+        'Handle integration work across components'
+      ]
+    },
+    'Visionary Explorer': {
+      summary: 'Big-picture thinker who spots opportunities and explores new approaches.',
+      suggestions: [
+        'Define the product direction and success criteria',
+        'Research tools/tech and validate assumptions with quick spikes',
+        'Translate user needs into focused milestones'
+      ]
+    }
+  };
+
+  const cleanupPersonality = (raw) => {
+    if (!raw) return '';
+    // remove score fragments like: Scores: C=12, I=34, P=56, D=78
+    let cleaned = String(raw).replace(/Scores:\s*C=\d+,\s*I=\d+,\s*P=\d+,\s*D=\d+\.?/gi, '').trim();
+    // collapse multiple spaces
+    cleaned = cleaned.replace(/\s{2,}/g, ' ');
+    return cleaned;
+  };
+
   // Lightweight modal to show compatibility breakdown
   const InfoModal = ({ isOpen, onClose, scores, title }) => {
     if (!isOpen) return null;
@@ -366,21 +419,25 @@ const TeamApplications = () => {
     const overall = Number(scores?.overall);
     const overallColor = Number.isFinite(overall)
       ? overall >= 75
-        ? "text-green-700"
+        ? "text-slate-800"
         : overall > 50
-        ? "text-yellow-700"
-        : "text-red-700"
+        ? "text-slate-700"
+        : "text-slate-900"
       : "text-gray-600";
+    
+    // Extract personality type and get curated description
+    const personalityType = scores?.personalityDescription ? getPersonalityTitle(scores.personalityDescription) : '';
+    const curated = personalityType ? ARCHETYPE_COPY[personalityType] : null;
+    const description = curated ? curated.summary : (scores?.personalityDescription ? cleanupPersonality(scores.personalityDescription) : '');
+    
     return (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-        onMouseDown={onClose}
         role="dialog"
         aria-modal="true"
       >
         <div
           className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl"
-          onMouseDown={(e) => e.stopPropagation()}
         >
           <div className="mb-4 flex items-start justify-between">
             <div>
@@ -395,6 +452,27 @@ const TeamApplications = () => {
               ✖
             </button>
           </div>
+          
+          {/* Personality Description */}
+          {personalityType && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">{personalityType}</p>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {description || 'No personality description available.'}
+              </p>
+              {curated && curated.suggestions?.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-sm font-bold text-teal">Best ways to contribute</p>
+                  <ul className="list-disc pl-5 mt-1 space-y-1 text-sm">
+                    {curated.suggestions.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+          
           <div className={`mb-3 text-2xl font-bold ${overallColor}`}>
             {Number.isFinite(overall) ? `${overall.toFixed(2)}% Match` : "N/A"}
           </div>
@@ -403,46 +481,50 @@ const TeamApplications = () => {
               const num = Number(val);
               const ok = Number.isFinite(num);
               const pct = ok ? Math.max(0, Math.min(100, num)) : 0;
-              const textColor = ok
-                ? num >= 75
-                  ? "text-green-600"
-                  : num > 50
-                  ? "text-yellow-600"
-                  : "text-red-600"
-                : "text-gray-500";
-              const barColor = ok
-                ? num >= 75
-                  ? "bg-green-600"
-                  : num > 50
-                  ? "bg-yellow-600"
-                  : "bg-red-600"
-                : "bg-gray-300";
+              
+              // Set specific colors for each score type (matching Dashboard vibrant color scheme)
+              let textColor, barColor;
+              if (label === 'Personality') {
+                textColor = ok ? 'text-red-800' : 'text-gray-500';
+                barColor = ok ? 'bg-red-600' : 'bg-gray-300';
+              } else if (label === 'Skill') {
+                textColor = ok ? 'text-green-800' : 'text-gray-500';
+                barColor = ok ? 'bg-green-600' : 'bg-gray-300';
+              } else if (label === 'Interest') {
+                textColor = ok ? 'text-orange-800' : 'text-gray-500';
+                barColor = ok ? 'bg-orange-600' : 'bg-gray-300';
+              } else {
+                textColor = ok ? 'text-gray-600' : 'text-gray-500';
+                barColor = ok ? 'bg-gray-500' : 'bg-gray-300';
+              }
+              
               return (
                 <div key={label} className="mb-3 last:mb-0">
-                  <div className={`text-base font-medium ${textColor}`}>
-                    {label}: {ok ? `${num.toFixed(2)}%` : "N/A"}
-                  </div>
-                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
-                    <div
-                      className={`h-full ${barColor}`}
-                      style={{ width: `${pct}%` }}
-                      aria-valuenow={pct}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      role="progressbar"
-                    />
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm w-24 whitespace-nowrap">
+                      <span className="font-semibold">{label}:</span>
+                    </div>
+                    <div className="text-sm w-16 text-right">
+                      <span className={`font-bold ${textColor}`}>
+                        {ok ? `${num.toFixed(2)}%` : "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex-1 max-w-[300px]">
+                      <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                        <div
+                          className={`h-full ${barColor}`}
+                          style={{ width: `${pct}%` }}
+                          aria-valuenow={pct}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          role="progressbar"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
             })}
-          </div>
-          <div className="mt-4 flex justify-end">
-            <button
-              className="rounded border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
-              onClick={onClose}
-            >
-              Close
-            </button>
           </div>
         </div>
       </div>

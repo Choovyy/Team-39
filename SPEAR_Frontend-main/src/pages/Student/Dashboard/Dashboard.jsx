@@ -268,7 +268,7 @@ const Dashboard = () => {
               >
                 {/* Match badge */}
                 <div className="absolute top-4 right-4 text-right">
-                  <div className="text-amber-500 font-semibold text-base">
+                  <div className="font-semibold text-base" style={{ color: '#1e293b' }}>
                     {m.overallScore?.toFixed?.(0) ?? '—'}% Match
                   </div>
                 </div>
@@ -365,37 +365,43 @@ const Dashboard = () => {
                 {/* Score rows */}
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center gap-4">
-                    <div className="text-sm w-36 whitespace-nowrap">
-                      <span className="font-semibold">Personality:</span>{' '}
-                      <span className="font-bold" style={{ color: '#f59e0b' }}>{m.personalityScore?.toFixed?.(2) ?? '—'}%</span>
+                    <div className="text-sm w-24 whitespace-nowrap">
+                      <span className="font-semibold">Personality:</span>
+                    </div>
+                    <div className="text-sm w-16 text-right">
+                      <span className="font-bold" style={{ color: '#7c2d12' }}>{m.personalityScore?.toFixed?.(2) ?? '—'}%</span>
                     </div>
                     <div className="flex-1 max-w-[300px]">
                       <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                        <div className="h-full" style={{ backgroundColor: '#fbbf24', width: `${Math.max(0, Math.min(100, Number(m.personalityScore || 0)))}%` }} />
+                        <div className="h-full" style={{ backgroundColor: '#dc2626', width: `${Math.max(0, Math.min(100, Number(m.personalityScore || 0)))}%` }} />
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <div className="text-sm w-36 whitespace-nowrap">
-                      <span className="font-semibold">Skill:</span>{' '}
-                      <span className="font-bold" style={{ color: '#22c55e' }}>{m.skillScore?.toFixed?.(2) ?? '—'}%</span>
+                    <div className="text-sm w-24 whitespace-nowrap">
+                      <span className="font-semibold">Skill:</span>
+                    </div>
+                    <div className="text-sm w-16 text-right">
+                      <span className="font-bold" style={{ color: '#166534' }}>{m.skillScore?.toFixed?.(2) ?? '—'}%</span>
                     </div>
                     <div className="flex-1 max-w-[300px]">
                       <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                        <div className="h-full" style={{ backgroundColor: '#22c55e', width: `${Math.max(0, Math.min(100, Number(m.skillScore || 0)))}%` }} />
+                        <div className="h-full" style={{ backgroundColor: '#16a34a', width: `${Math.max(0, Math.min(100, Number(m.skillScore || 0)))}%` }} />
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <div className="text-sm w-36 whitespace-nowrap">
-                      <span className="font-semibold">Interest:</span>{' '}
-                      <span className="font-bold" style={{ color: '#ef4444' }}>{m.projectInterestScore?.toFixed?.(2) ?? '—'}%</span>
+                    <div className="text-sm w-24 whitespace-nowrap">
+                      <span className="font-semibold">Interest:</span>
+                    </div>
+                    <div className="text-sm w-16 text-right">
+                      <span className="font-bold" style={{ color: '#7c2d12' }}>{m.projectInterestScore?.toFixed?.(2) ?? '—'}%</span>
                     </div>
                     <div className="flex-1 max-w-[300px]">
                       <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                        <div className="h-full" style={{ backgroundColor: '#ef4444', width: `${Math.max(0, Math.min(100, Number(m.projectInterestScore || 0)))}%` }} />
+                        <div className="h-full" style={{ backgroundColor: '#ea580c', width: `${Math.max(0, Math.min(100, Number(m.projectInterestScore || 0)))}%` }} />
                       </div>
                     </div>
                   </div>
