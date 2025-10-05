@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthContext from '../../services/AuthContext';
 import axios from 'axios';
-import people from '../../assets/imgs/people.png';
 import '../../styles/Survey/Survey1.css';
 
 const Survey1 = () => {
@@ -26,47 +25,78 @@ const Survey1 = () => {
         });
     }
   }, [authState, navigate]);
+
+  // Primary role
   const [selectedRole, setSelectedRole] = useState('');
   const [otherRole, setOtherRole] = useState('');
   const [otherSelected, setOtherSelected] = useState(false);
 
+  // Secondary role (single)
+  const [secondarySelected, setSecondarySelected] = useState({}); // { role: true }
+  const [secondaryOtherInput, setSecondaryOtherInput] = useState('');
+  const [secondaryCustom, setSecondaryCustom] = useState([]); // single custom value in [0]
+
+  // Helpers to compare and resolve primary label
+  const equalsIgnoreCase = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
+  const resolvedPrimary = (selectedRole === 'Other' ? otherRole : selectedRole)?.trim() || '';
+
   // Load saved data on component mount
   useEffect(() => {
-    const savedData = localStorage.getItem('survey1Data');
-    if (savedData) {
-      try {
-        const data = JSON.parse(savedData);
-        if (data.preferredRole) {
-          // Check if it's a predefined role
-          const roles = [
+    try {
+      const allSurveyData = JSON.parse(localStorage.getItem('surveyData') || '{}');
+      const step1 = allSurveyData.step1 || {};
+      const legacy = JSON.parse(localStorage.getItem('survey1Data') || 'null');
+
+      const primary = step1.primaryRole || legacy?.preferredRole || '';
+      if (primary) {
+        const roleList = [
+          'UI/UX Designer',
+          'Frontend Developer',
+          'Backend Developer',
+          'Game Developer',
+          'Technical Writer',
+          'Team Leader'
+        ];
+        if (roleList.includes(primary)) {
+          setSelectedRole(primary);
+          setOtherSelected(false);
+          setOtherRole('');
+        } else {
+          setSelectedRole('Other');
+          setOtherSelected(true);
+          setOtherRole(primary);
+        }
+      }
+
+      const sec = Array.isArray(step1.secondaryRoles) ? step1.secondaryRoles : [];
+      if (sec.length) {
+        const first = sec.find(r => r && !equalsIgnoreCase(r, primary));
+        if (first) {
+          const roleList = [
             'UI/UX Designer',
-            'Frontend Developer', 
+            'Frontend Developer',
             'Backend Developer',
             'Game Developer',
             'Technical Writer',
             'Team Leader'
           ];
-          
-          if (roles.includes(data.preferredRole)) {
-            setSelectedRole(data.preferredRole);
-            setOtherSelected(false);
-            setOtherRole('');
+          if (roleList.includes(first)) {
+            setSecondarySelected({ [first]: true });
+            setSecondaryCustom([]);
           } else {
-            // It's a custom role
-            setSelectedRole('Other');
-            setOtherSelected(true);
-            setOtherRole(data.preferredRole);
+            setSecondarySelected({});
+            setSecondaryCustom([first]);
           }
         }
-      } catch (error) {
-        console.error('Error loading survey1 data:', error);
       }
+    } catch (err) {
+      console.error('Error loading step1 data:', err);
     }
   }, []);
 
   const roles = [
     'UI/UX Designer',
-    'Frontend Developer', 
+    'Frontend Developer',
     'Backend Developer',
     'Game Developer',
     'Technical Writer',
@@ -95,6 +125,18 @@ const Survey1 = () => {
     setOtherRole(e.target.value);
   };
 
+  // Cleanup: when primary changes, remove duplicates from secondary
+  useEffect(() => {
+    if (!resolvedPrimary) return;
+    setSecondarySelected(prev => {
+      if (prev[resolvedPrimary]) {
+        return {}; // clear single-select if it matches primary
+      }
+      return prev;
+    });
+    setSecondaryCustom(prev => prev.filter(n => !equalsIgnoreCase(n, resolvedPrimary)));
+  }, [resolvedPrimary]);
+
   // UI/UX helpers: font-size control and progress step
   const [fontSize, setFontSize] = useState('16px');
   const surveyStep = 1; // used by progress indicator
@@ -109,24 +151,52 @@ const Survey1 = () => {
     }
   };
 
-  const handleNext = () => {
-  if (!selectedRole) return;
-
-  // Load previous survey data (if any)
-  const allSurveyData = JSON.parse(localStorage.getItem('surveyData') || '{}');
-
-  // Add/update current step
-  allSurveyData.step1 = {
-    preferredRole: selectedRole === 'Other' ? otherRole : selectedRole,
+  // Secondary preset: single-select behavior, mutually exclusive with custom
+  const toggleSecondaryRole = (role) => {
+    setSecondaryCustom([]);
+    setSecondarySelected(prev => {
+      const already = !!prev[role];
+      return already ? {} : { [role]: true };
+    });
   };
 
-  // Save combined survey data
-  localStorage.setItem('surveyData', JSON.stringify(allSurveyData));
+  // Secondary custom: single value, mutually exclusive with preset
+  const addSecondaryCustom = () => {
+    const name = (secondaryOtherInput || '').trim();
+    if (!name) return;
+    if (resolvedPrimary && equalsIgnoreCase(name, resolvedPrimary)) return;
+    setSecondarySelected({});
+    setSecondaryCustom([name]);
+    setSecondaryOtherInput('');
+  };
 
-  // Navigate to next survey page
-  navigate('/survey2');
-};
+  const removeSecondaryCustom = (name) => {
+    setSecondaryCustom(prev => prev.filter(n => n !== name));
+  };
 
+  const handleNext = () => {
+    if (!selectedRole) return;
+
+    const primaryRole = selectedRole === 'Other' ? (otherRole || '').trim() : selectedRole;
+    if (!primaryRole) return;
+
+    // Determine the single secondary (preset preferred if both exist somehow)
+    const selectedPreset = Object.entries(secondarySelected).find(([, v]) => !!v)?.[0];
+    const selectedCustom = secondaryCustom[0];
+    const pickedSecondary = selectedPreset || selectedCustom || null;
+    const allSecondary = pickedSecondary && !equalsIgnoreCase(pickedSecondary, primaryRole) ? [pickedSecondary] : [];
+
+    // Load previous survey data (if any) and save step1
+    const allSurveyData = JSON.parse(localStorage.getItem('surveyData') || '{}');
+    allSurveyData.step1 = {
+      primaryRole,
+      secondaryRoles: allSecondary
+    };
+    localStorage.setItem('surveyData', JSON.stringify(allSurveyData));
+
+    // Navigate to next survey page
+    navigate('/survey2');
+  };
 
   const isNextDisabled = !selectedRole || (selectedRole === 'Other' && !otherRole.trim());
 
@@ -149,8 +219,8 @@ const Survey1 = () => {
         </div>
 
         <div className="bg-white shadow-md rounded-lg p-6">
-          <h1 className="text-xl font-semibold text-teal mb-2">Preferred Role</h1>
-          <p className="text-gray-600 mb-4">Choose the role you're most comfortable with. Only one selection is required.</p>
+          <h1 className="text-xl font-semibold text-teal mb-2">Primary Role</h1>
+          <p className="text-gray-600 mb-4">Choose your primary role. Only one selection is required.</p>
 
           <div role="radiogroup" aria-label="Preferred role options" className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             {roles.map((role, index) => (
@@ -180,7 +250,7 @@ const Survey1 = () => {
             ))}
           </div>
 
-          <div className="mb-4">
+          <div className="mb-6">
             <label className="inline-flex items-center gap-2">
               <input type="checkbox" checked={otherSelected} onChange={handleOtherToggle} className="form-checkbox" />
               <span className="text-gray-800">Other (specify)</span>
@@ -198,6 +268,62 @@ const Survey1 = () => {
                 />
               </div>
             )}
+          </div>
+
+          {/* Secondary role section (single-select) */}
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-teal mb-2">Secondary Role (optional)</h2>
+            <p className="text-gray-600 mb-3">Pick at most one role you can also support.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              {roles.map((role) => (
+                <label key={`sec-${role}`} className={`p-3 rounded border cursor-pointer ${secondarySelected[role] ? 'border-teal bg-teal/10' : 'border-gray-200'}`}>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={!!secondarySelected[role]}
+                      onChange={() => toggleSecondaryRole(role)}
+                      aria-label={`Secondary ${role}`}
+                      disabled={!!resolvedPrimary && equalsIgnoreCase(role, resolvedPrimary)}
+                      title={equalsIgnoreCase(role, resolvedPrimary) ? 'Already selected as primary role' : undefined}
+                    />
+                    <span className="text-gray-800 font-medium">{role}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <div className="mt-2">
+              <label htmlFor="secondaryOther" className="block mb-1 font-medium">Specify other secondary role</label>
+              <div className="flex gap-2">
+                <input
+                  id="secondaryOther"
+                  type="text"
+                  value={secondaryOtherInput}
+                  onChange={(e) => setSecondaryOtherInput(e.target.value)}
+                  className="flex-1 border rounded-md p-2"
+                  placeholder="e.g. DevOps Engineer"
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addSecondaryCustom(); } }}
+                />
+                <button
+                  type="button"
+                  onClick={addSecondaryCustom}
+                  className="px-3 py-2 bg-teal text-white rounded hover:bg-teal-dark"
+                  title={resolvedPrimary && equalsIgnoreCase(secondaryOtherInput, resolvedPrimary) ? 'Cannot duplicate primary role' : undefined}
+                >
+                  Add
+                </button>
+              </div>
+              {secondaryCustom.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {secondaryCustom.map(name => (
+                    <span key={name} className="inline-flex items-center gap-2 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">
+                      {name}
+                      <button type="button" onClick={() => removeSecondaryCustom(name)} className="ml-1 text-gray-600 hover:text-gray-800">×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end">

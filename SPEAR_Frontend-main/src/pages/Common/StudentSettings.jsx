@@ -131,8 +131,21 @@ const StudentSettings = () => {
   const [profileData, setProfileData] = useState({
     profilePicture: "",
     github: "",
-    facebook: ""
+    facebook: "",
+    // survey-related (display-only)
+    technicalSkills: [], // [{ skill, masteryLevel }]
+    preferredRoles: [],  // ["Primary", "Secondary1", ...]
+    projectInterests: []
   });
+
+  // Roles editing state
+  const roleOptions = ['UI/UX Designer','Frontend Developer','Backend Developer','Game Developer','Technical Writer','Team Leader'];
+  const [editRoles, setEditRoles] = useState(false);
+  const [primaryRole, setPrimaryRole] = useState('');
+  const [secondaryMap, setSecondaryMap] = useState({}); // { role: true }
+  const [secondaryCustom, setSecondaryCustom] = useState([]);
+  const [secondaryInput, setSecondaryInput] = useState('');
+  const equalsIgnoreCase = (a,b) => (a||'').trim().toLowerCase() === (b||'').trim().toLowerCase();
 
   const address = getIpAddress();
 
@@ -157,10 +170,91 @@ const StudentSettings = () => {
       setProfileData({
         profilePicture: profileResp.data.profilePicture || "",
         github: profileResp.data.github || "",
-        facebook: profileResp.data.facebook || ""
+        facebook: profileResp.data.facebook || "",
+        technicalSkills: Array.isArray(profileResp.data.technicalSkills) ? profileResp.data.technicalSkills : [],
+        preferredRoles: Array.isArray(profileResp.data.preferredRoles) ? profileResp.data.preferredRoles : [],
+        projectInterests: Array.isArray(profileResp.data.projectInterests) ? profileResp.data.projectInterests : []
       });
     } catch (e) {
       toast.error("Error fetching data.");
+    }
+  };
+
+  const beginEditRoles = () => {
+    const roles = Array.isArray(profileData.preferredRoles) ? profileData.preferredRoles.filter(Boolean) : [];
+    const initialPrimary = roles[0] || '';
+    setPrimaryRole(initialPrimary);
+    const rest = roles.slice(1).filter(r => r && !equalsIgnoreCase(r, initialPrimary));
+    // Only keep the first secondary
+    const first = rest[0];
+    if (first) {
+      if (roleOptions.some(o => equalsIgnoreCase(o, first))) {
+        setSecondaryMap({ [first]: true });
+        setSecondaryCustom([]);
+      } else {
+        setSecondaryMap({});
+        setSecondaryCustom([first]);
+      }
+    } else {
+      setSecondaryMap({});
+      setSecondaryCustom([]);
+    }
+    setSecondaryInput('');
+    setEditRoles(true);
+  };
+
+  // Remove duplicate of primary from secondary selections
+  useEffect(() => {
+    if (!primaryRole) return;
+    setSecondaryMap(prev => {
+      if (prev[primaryRole]) {
+        const next = { ...prev }; delete next[primaryRole]; return next;
+      }
+      return prev;
+    });
+    setSecondaryCustom(prev => prev.filter(n => !equalsIgnoreCase(n, primaryRole)));
+  }, [primaryRole]);
+
+  const toggleSecondary = (role) => {
+    // single-select: toggling a role selects only that role, or clears if already selected; also clear custom
+    setSecondaryCustom([]);
+    setSecondaryMap(prev => {
+      const already = !!prev[role];
+      return already ? {} : { [role]: true };
+    });
+  };
+  const addCustomSecondary = () => {
+    const name = (secondaryInput || '').trim();
+    if (!name) return;
+    if (equalsIgnoreCase(name, primaryRole)) return;
+    if (secondaryCustom.some(n => equalsIgnoreCase(n, name))) return;
+    if (Object.keys(secondaryMap).some(k => secondaryMap[k] && equalsIgnoreCase(k, name))) return;
+    // single custom: replace and clear preset selection
+    setSecondaryMap({});
+    setSecondaryCustom([name]);
+    setSecondaryInput('');
+  };
+  const removeCustomSecondary = (name) => setSecondaryCustom(prev => prev.filter(n => !equalsIgnoreCase(n, name)));
+
+  const saveRoles = async () => {
+    // Determine single picked secondary (preset preferred if both somehow set)
+    const selectedPreset = Object.entries(secondaryMap).find(([, v]) => !!v)?.[0];
+    const selectedCustom = secondaryCustom[0];
+    const pickedSecondary = selectedPreset || selectedCustom || null;
+    const preferredRoles = primaryRole ? [primaryRole, ...(pickedSecondary && !equalsIgnoreCase(pickedSecondary, primaryRole) ? [pickedSecondary] : [])] : [];
+    try {
+      const payload = { preferredRoles };
+      await axios.put(
+        `http://${address}:8080/api/profile/${authState.uid}`,
+        payload,
+        { headers: { Authorization: `Bearer ${authState.token}` } }
+      );
+      setProfileData(prev => ({ ...prev, preferredRoles }));
+      setEditRoles(false);
+      toast.success('Roles updated.');
+    } catch (e) {
+      console.error('Failed to save roles:', e);
+      toast.error(e.response?.data?.message || 'Failed to save roles.');
     }
   };
 
@@ -279,6 +373,112 @@ const StudentSettings = () => {
                   className="w-full border rounded-md p-3"
                   placeholder="https://facebook.com/yourprofile"
                 />
+              </div>
+            </div>
+            {/* Display roles and skills (no percentages) */}
+            <div className="border-t pt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <h3 className="font-semibold mb-2">Roles</h3>
+                {!editRoles ? (
+                  <>
+                    {profileData.preferredRoles && profileData.preferredRoles.length > 0 ? (
+                      <ul className="list-disc list-inside text-gray-700">
+                        {profileData.preferredRoles.map((r, idx) => (
+                          <li key={`${r}-${idx}`}>{r}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="text-gray-500">No roles set yet.</div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={beginEditRoles}
+                      className="mt-2 px-3 py-2 rounded bg-teal text-white hover:bg-teal-dark"
+                    >
+                      Edit Secondary Roles
+                    </button>
+                  </>
+                ) : (
+                  <div className="p-3 border rounded">
+                    <div className="mb-3">
+                      <label className="block font-medium mb-1">Primary Role</label>
+                      <div className="w-full border rounded p-2 bg-gray-50 text-gray-700">
+                        {primaryRole || '—'}
+                      </div>
+                    </div>
+
+                    <label className="block font-medium mb-1">Secondary Roles</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                      {roleOptions.map(r => (
+                        <label key={`sec-${r}`} className={`p-2 rounded border cursor-pointer ${secondaryMap[r] ? 'border-teal bg-teal/10' : 'border-gray-200'}`}>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!secondaryMap[r]}
+                              onChange={() => toggleSecondary(r)}
+                              disabled={!!primaryRole && equalsIgnoreCase(r, primaryRole)}
+                              title={equalsIgnoreCase(r, primaryRole) ? 'Already selected as primary' : undefined}
+                            />
+                            <span>{r}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={secondaryInput}
+                        onChange={(e) => setSecondaryInput(e.target.value)}
+                        className="flex-1 border rounded p-2"
+                        placeholder="Add custom secondary role"
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomSecondary(); } }}
+                      />
+                      <button type="button" className="px-3 py-2 bg-teal text-white rounded" onClick={addCustomSecondary}>
+                        Add
+                      </button>
+                    </div>
+                    {secondaryCustom.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {secondaryCustom.map(n => (
+                          <span key={n} className="inline-flex items-center gap-1 bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">
+                            {n}
+                            <button type="button" onClick={() => removeCustomSecondary(n)} className="ml-1">×</button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <button type="button" onClick={saveRoles} className="px-3 py-2 bg-teal text-white rounded">Save</button>
+                      <button type="button" onClick={() => setEditRoles(false)} className="px-3 py-2 bg-gray-200 rounded">Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Skills</h3>
+                {profileData.technicalSkills && profileData.technicalSkills.length > 0 ? (
+                  <ul className="list-disc list-inside text-gray-700">
+                    {profileData.technicalSkills.map((s, idx) => (
+                      <li key={`${s.skill || idx}`}>{s.skill}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-gray-500">No skills set yet.</div>
+                )}
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">Project Interests</h3>
+                {profileData.projectInterests && profileData.projectInterests.length > 0 ? (
+                  <ul className="list-disc list-inside text-gray-700">
+                    {profileData.projectInterests.map((p, idx) => (
+                      <li key={`${p}-${idx}`}>{p}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-gray-500">No interests set yet.</div>
+                )}
               </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-between mt-6 space-y-3 sm:space-y-0 sm:space-x-4">

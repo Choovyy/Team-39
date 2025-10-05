@@ -9,6 +9,17 @@ const ApplyTeamModal = ({ teamId, onClose }) => {
   const [role, setRole] = useState("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
+  const REASON_MAX = 20;
+
+  // Fixed role list to reduce input errors
+  const roleList = [
+    'UI/UX Designer',
+    'Frontend Developer',
+    'Backend Developer',
+    'Game Developer',
+    'Technical Writer',
+    'Team Leader'
+  ];
 
   const address = getIpAddress();
 
@@ -67,29 +78,38 @@ const ApplyTeamModal = ({ teamId, onClose }) => {
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          {/* Role Input */}
+          {/* Role Input (Dropdown) */}
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold mb-2">Role</label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Specify the role you are applying for."
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               required
-            />
+            >
+              <option value="" disabled>
+                Select a role
+              </option>
+              {roleList.map((r) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Reason Input */}
+          {/* Reason Input (limited length) */}
           <div className="mb-4">
             <label className="block text-gray-700 font-semibold mb-2">Reason</label>
             <textarea
               className="w-full px-3 py-2 border border-gray-300 h-40 rounded-md"
-              placeholder="Provide a brief statement on why you are interested. If you have a portfolio, please include a link."
+              placeholder="Provide a brief reason (max 20 characters)."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
+              maxLength={REASON_MAX}
               required
             ></textarea>
+            <div className="text-xs text-gray-500 text-right mt-1">
+              {reason.length}/{REASON_MAX}
+            </div>
           </div>
           <div className="flex justify-end gap-3 mt-4">
             {/* Close Button */}

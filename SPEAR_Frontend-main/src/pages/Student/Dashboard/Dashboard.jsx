@@ -130,6 +130,38 @@ const Dashboard = () => {
     return p.split('(')[0].split('.')[0].trim();
   };
 
+  // Extract descriptive traits: take text inside the first parentheses BEFORE "Scores"
+  const extractTraits = (p) => {
+    if (!p) return '';
+    const beforeScores = p.split(/Scores:/i)[0] || p;
+    const paren = beforeScores.match(/\(([^)]*)\)/);
+    return paren && paren[1] ? paren[1].trim() : '';
+  };
+
+  // Team visibility rule:
+  // - Hide users who are already in a team
+  // - Exception: keep them if they are the team leader AND the team is not full (still recruiting)
+  // Notes: This uses optional fields on match objects if backend provides them.
+  // Supported hints: isInTeam, teamId, teams[], isTeamLeader, roleInTeam, leader, teamFull, teamSize, maxMembers, recruitmentOpen
+  const teamEligible = (m) => {
+    try {
+      const isInTeam = m?.isInTeam === true || m?.teamId != null || (Array.isArray(m?.teams) && m.teams.length > 0);
+      if (!isInTeam) return true; // not in a team => keep
+
+      const isLeader = m?.isTeamLeader === true || m?.leader === true || String(m?.roleInTeam || '').toUpperCase() === 'LEADER';
+      const teamSize = Number(m?.teamSize || 0);
+      const maxMembers = Number(m?.maxMembers || 0);
+      const derivedFull = maxMembers > 0 && teamSize >= maxMembers;
+      const teamFull = m?.teamFull === true || derivedFull;
+      const recruitmentOpen = m?.recruitmentOpen === true || (!teamFull && maxMembers > 0);
+
+      if (isLeader && !teamFull && recruitmentOpen) return true; // leader of not-full team => keep
+      return false; // otherwise hide (already in a team)
+    } catch {
+      return true; // in case of unexpected shape, don't hide
+    }
+  };
+
   // All possible archetypes defined in backend PersonalityService (deriveArchetype)
   const ALL_ARCHETYPES = [
     'Structured Innovator',
@@ -166,6 +198,8 @@ const Dashboard = () => {
       const matchEmails = [m.email, m.personalEmail, m.contactEmail].filter(Boolean).map(e => String(e).toLowerCase());
       if (matchEmails.includes(userEmail)) return false;
     }
+    // Team-based visibility
+    if (!teamEligible(m)) return false;
     const nameMatch = !search || m.name?.toLowerCase().includes(search.toLowerCase());
     const personalityTitle = getPersonalityTitle(m.personality);
     const personalityMatch = !personalityFilter || personalityTitle === personalityFilter;
@@ -244,11 +278,11 @@ const Dashboard = () => {
             const outlookHref = buildOutlookComposeLink(email, m);
             const githubHref = normalizeLink(m.github || m.githubUrl || m.githubHandle, 'github');
             const facebookHref = normalizeLink(m.facebook || m.facebookUrl || m.facebookHandle, 'facebook');
-            const roleLabel = Array.isArray(m.preferredRoles)
-              ? (typeof m.preferredRoles[0] === 'object' && m.preferredRoles[0]?.role
-                  ? m.preferredRoles[0].role
-                  : m.preferredRoles[0])
-              : (m.preferredRoles || '');
+            const allRoles = Array.isArray(m.preferredRoles)
+              ? m.preferredRoles.map(r => (typeof r === 'object' && r?.role ? r.role : r)).filter(Boolean)
+              : (Array.isArray(m.preferredRoles) ? m.preferredRoles : []);
+            const primaryRole = allRoles[0] || '';
+            const secondaryRoles = allRoles.slice(1);
             const skillsList = Array.isArray(m.technicalSkills)
               ? m.technicalSkills.map(ts => (typeof ts === 'object' && ts.skill ? ts.skill : ts)).filter(Boolean)
               : [];
@@ -284,7 +318,26 @@ const Dashboard = () => {
                     )}
                     <div className="flex-1 min-w-0">
                       <h2 id={`match-${idx}-name`} className="font-semibold text-teal text-lg">{m.name || 'Unknown User'}</h2>
-                      <p className="text-sm text-gray-500">{roleLabel || 'Student'}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        <span className="text-xs text-gray-500 font-medium mr-1">Primary:</span>
+                        {primaryRole ? (
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-gray-50 text-gray-600 border">
+                            {primaryRole}
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-gray-50 text-gray-400 border">—</span>
+                        )}
+                      </div>
+                      {secondaryRoles.length > 0 && (
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-gray-500 font-medium mr-1">Secondary:</span>
+                          {secondaryRoles.slice(0, 6).map((role, i) => (
+                            <span key={`sec-top-${i}`} className="px-2 py-0.5 text-xs rounded-full bg-gray-50 text-gray-600 border">
+                              {role}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <div className="mt-2 flex items-center gap-3">
                         <span className="text-xs text-gray-500 font-medium">Socials:</span>
                         {outlookHref && (
@@ -336,7 +389,7 @@ const Dashboard = () => {
                 <div className="text-sm space-y-3 mb-4">
                   <p className="text-gray-700">
                     <span className="font-semibold">Personality:</span>{' '}
-                    {m.personality ? m.personality.replace(/Scores: C=\d+, I=\d+, P=\d+, D=\d+\.?/g, '').trim() : 'No Personality'}
+                    {m.personality ? getPersonalityTitle(m.personality) : 'No Personality'}
                     {m.personality && (
                       <button
                         className="ml-2 inline-flex items-center justify-center text-teal hover:text-teal/80"
@@ -348,6 +401,12 @@ const Dashboard = () => {
                       </button>
                     )}
                   </p>
+                  {m.personality && (
+                    <p className="text-gray-700">
+                      <span className="font-semibold">Traits:</span>{' '}
+                      {extractTraits(m.personality) || '—'}
+                    </p>
+                  )}
 
                   {skillsList.length > 0 && (
                     <div className="flex flex-wrap gap-2">
@@ -358,6 +417,7 @@ const Dashboard = () => {
                       ))}
                     </div>
                   )}
+
                 </div>
 
                 {/* contact slide panel removed to match design; icons shown under name */}

@@ -113,7 +113,7 @@ const PersonalityTest = () => {
       // Gather all survey data from localStorage
       const allData = JSON.parse(localStorage.getItem('surveyData') || '{}');
       const survey3Data = JSON.parse(localStorage.getItem('survey3Data') || '{}');
-      const step1 = allData.step1 || {};
+  const step1 = allData.step1 || {};
       const step2 = allData.step2 || {};
       const step3 = survey3Data.interests ? { projectInterests: survey3Data.interests.map(i => i.name) } : { projectInterests: [] };
       const technicalSkills = (step2.selections || []).map(s => ({
@@ -128,8 +128,12 @@ const PersonalityTest = () => {
       });
       const personalitySummary = personalityResp.data?.summary || '';
       // Build final SurveyDTO
+      const preferredRoles = [
+        ...(step1.primaryRole ? [step1.primaryRole] : []),
+        ...(Array.isArray(step1.secondaryRoles) ? step1.secondaryRoles : [])
+      ];
       const surveyDTO = {
-        preferredRoles: [step1.preferredRole].filter(Boolean),
+        preferredRoles,
         technicalSkills: technicalSkills,
         projectInterests: step3.projectInterests,
         personality: personalitySummary
