@@ -38,6 +38,57 @@ const Dashboard = () => {
 
   // Normalize contact values into safe hrefs for anchors
   
+  // Normalize helper for strings
+  const normalize = (s) => (s ?? '').toString().trim().toLowerCase();
+
+  // Cache of my own contact info to support robust self-exclusion
+  const [myEmail, setMyEmail] = useState('');
+
+  // Fetch the logged-in user's email once (AuthContext doesn't expose email)
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        if (!authState?.uid) return;
+        const resp = await axios.get(`http://${address}:8080/get-student/${authState.uid}` , {
+          headers: { Authorization: authState.token ? `Bearer ${authState.token}` : undefined }
+        });
+        const email = resp?.data?.email ? String(resp.data.email) : '';
+        setMyEmail(email);
+      } catch (e) {
+        // Non-fatal: if email not available, UID matching will still work
+        // console.debug('Failed to fetch current user email for self-exclusion', e);
+      }
+    };
+    fetchMe();
+  }, [authState?.uid, authState?.token, address]);
+
+  // Determine if a match entry is the logged-in user (by uid or email)
+  const isSelf = (m) => {
+    try {
+      const myUid = authState?.uid != null ? String(authState.uid) : '';
+      const myEmailNorm = normalize(myEmail);
+
+      const matchUid =
+        m?.uid != null ? String(m.uid)
+        : m?.userId != null ? String(m.userId)
+        : m?.id != null ? String(m.id)
+        : m?.matchedUserId != null ? String(m.matchedUserId)
+        : m?.studentId != null ? String(m.studentId)
+        : m?.user?.id != null ? String(m.user.id)
+        : '';
+
+      const matchEmails = [m?.email, m?.personalEmail, m?.contactEmail, m?.user?.email]
+        .filter(Boolean)
+        .map((e) => normalize(e));
+
+      if (myUid && matchUid && myUid === matchUid) return true;
+      if (myEmailNorm && matchEmails.includes(myEmailNorm)) return true;
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
 
   const fetchMatches = async () => {
     setLoading(true); setError(null);
@@ -191,13 +242,9 @@ const Dashboard = () => {
   const roles = Array.from(new Set(matches.flatMap(m => Array.isArray(m.preferredRoles) ? m.preferredRoles.map(r => typeof r === 'object' && r.role ? r.role : r) : []).filter(Boolean)));
   const interests = Array.from(new Set(matches.flatMap(m => Array.isArray(m.projectInterests) ? m.projectInterests : []).filter(Boolean)));
 
-  // Filtering logic + self exclusion by email only
+  // Filtering logic + robust self exclusion by uid/email
   const filteredMatches = matches.filter(m => {
-    const userEmail = authState.email?.toLowerCase();
-    if (userEmail) {
-      const matchEmails = [m.email, m.personalEmail, m.contactEmail].filter(Boolean).map(e => String(e).toLowerCase());
-      if (matchEmails.includes(userEmail)) return false;
-    }
+    if (isSelf(m)) return false;
     // Team-based visibility
     if (!teamEligible(m)) return false;
     const nameMatch = !search || m.name?.toLowerCase().includes(search.toLowerCase());
