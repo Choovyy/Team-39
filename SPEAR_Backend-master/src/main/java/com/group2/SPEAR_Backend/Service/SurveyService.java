@@ -219,43 +219,127 @@ private SurveyRepository surveyRepository;
                 return new ArrayList<>();
             }
 
-            // Preload users and profiles for enrichment
+            // Preload users and profiles for enrichment and latest profile-backed fields
             List<User> users = userRepository.findAll();
             Map<String, String> emailByFullName = new HashMap<>();
+            Map<String, User> userByEmail = new HashMap<>();
             for (User u : users) {
                 emailByFullName.put(u.getFullName(), u.getEmail());
+                userByEmail.put(u.getEmail(), u);
             }
 
             List<ProfileEntity> profiles = profileRepository.findAll();
-            Map<String, String> pictureByFullName  = new HashMap<>();
-            Map<String, String> githubByFullName   = new HashMap<>();   // NEW
-            Map<String, String> facebookByFullName = new HashMap<>();   // NEW
+            Map<String, ProfileEntity> profileByFullName = new HashMap<>();
+            Map<String, ProfileEntity> profileByEmail = new HashMap<>();
             for (ProfileEntity p : profiles) {
-                if (p.getUser() != null && p.getUser().getFullName() != null) {
-                    String fn = p.getUser().getFullName();
-                    pictureByFullName.put(fn, p.getProfilePicture());
-                    githubByFullName.put(fn, p.getGithub());
-                    facebookByFullName.put(fn, p.getFacebook());
+                if (p.getUser() != null) {
+                    if (p.getUser().getFullName() != null) {
+                        profileByFullName.put(p.getUser().getFullName(), p);
+                    }
+                    if (p.getUser().getEmail() != null) {
+                        profileByEmail.put(p.getUser().getEmail(), p);
+                    }
                 }
             }
 
-            // Enrich matches
+            // Enrich and overlay latest profile data
             for (MatchResultDTO match : matches) {
+                // 1) Fill missing email using full name
                 if (match.getEmail() == null || match.getEmail().isBlank()) {
                     String enrichedEmail = emailByFullName.get(match.getName());
                     if (enrichedEmail != null) match.setEmail(enrichedEmail);
                 }
-                match.setProfilePicture(pictureByFullName.getOrDefault(match.getName(), null));
 
-                if (match.getGithub() == null || match.getGithub().isBlank()) {
-                    match.setGithub(githubByFullName.get(match.getName()));       // NEW
+                // 2) Resolve profile by email (preferred) or by name
+                ProfileEntity matchedProfile = null;
+                if (match.getEmail() != null && !match.getEmail().isBlank()) {
+                    matchedProfile = profileByEmail.get(match.getEmail());
                 }
-                if (match.getFacebook() == null || match.getFacebook().isBlank()) {
-                    match.setFacebook(facebookByFullName.get(match.getName()));   // NEW
+                if (matchedProfile == null && match.getName() != null) {
+                    matchedProfile = profileByFullName.get(match.getName());
+                }
+
+                // 3) Socials and picture enrichment from profile
+                if (matchedProfile != null) {
+                    if (match.getProfilePicture() == null || match.getProfilePicture().isBlank()) {
+                        match.setProfilePicture(matchedProfile.getProfilePicture());
+                    }
+                    if (match.getGithub() == null || match.getGithub().isBlank()) {
+                        match.setGithub(matchedProfile.getGithub());
+                    }
+                    if (match.getFacebook() == null || match.getFacebook().isBlank()) {
+                        match.setFacebook(matchedProfile.getFacebook());
+                    }
+
+                    // 4) Overlay the latest profile-backed descriptive fields
+                    if (matchedProfile.getSurvey() != null) {
+                        // technicalSkills
+                        if (matchedProfile.getSurvey().getTechnicalSkills() != null) {
+                            List<com.group2.SPEAR_Backend.DTO.TechnicalSkillDTO> skillDTOs = matchedProfile.getSurvey().getTechnicalSkills().stream()
+                                    .map(ts -> new com.group2.SPEAR_Backend.DTO.TechnicalSkillDTO(ts.getSkill(), ts.getMasteryLevel()))
+                                    .toList();
+                            match.setTechnicalSkills(skillDTOs);
+                        }
+
+                        // preferredRoles (with de-duplication, case-insensitive, preserve order)
+                        if (matchedProfile.getSurvey().getPreferredRoles() != null) {
+                            List<String> roles = matchedProfile.getSurvey().getPreferredRoles();
+                            List<String> deduped = new ArrayList<>();
+                            Map<String, Boolean> seen = new HashMap<>();
+                            for (String r : roles) {
+                                if (r == null) continue;
+                                String key = r.trim().toLowerCase();
+                                if (key.isEmpty()) continue;
+                                if (!seen.containsKey(key)) {
+                                    seen.put(key, true);
+                                    deduped.add(r);
+                                }
+                            }
+                            match.setPreferredRoles(deduped);
+                        }
+
+                        // projectInterests (de-duplicate while preserving order)
+                        if (matchedProfile.getSurvey().getProjectInterests() != null) {
+                            List<String> interests = matchedProfile.getSurvey().getProjectInterests();
+                            List<String> deduped = new ArrayList<>();
+                            Map<String, Boolean> seen = new HashMap<>();
+                            for (String pi : interests) {
+                                if (pi == null) continue;
+                                String key = pi.trim().toLowerCase();
+                                if (key.isEmpty()) continue;
+                                if (!seen.containsKey(key)) {
+                                    seen.put(key, true);
+                                    deduped.add(pi);
+                                }
+                            }
+                            match.setProjectInterests(deduped);
+                        }
+
+                        // personality text from latest survey (scores remain from AI)
+                        if (matchedProfile.getSurvey().getPersonality() != null && !matchedProfile.getSurvey().getPersonality().isBlank()) {
+                            match.setPersonality(matchedProfile.getSurvey().getPersonality());
+                        }
+                    }
                 }
             }
 
-            return matches;
+            // De-duplicate entire match list by email (preferred) then name, keeping the higher overallScore
+            Map<String, MatchResultDTO> bestByKey = new HashMap<>();
+            for (MatchResultDTO m : matches) {
+                String key = (m.getEmail() != null && !m.getEmail().isBlank()) ? ("email:" + m.getEmail()) : ("name:" + (m.getName() == null ? "" : m.getName()));
+                MatchResultDTO existing = bestByKey.get(key);
+                if (existing == null) {
+                    bestByKey.put(key, m);
+                } else {
+                    double curr = m.getOverallScore();
+                    double prev = existing.getOverallScore();
+                    if (Double.compare(curr, prev) > 0) {
+                        bestByKey.put(key, m);
+                    }
+                }
+            }
+
+            return new ArrayList<>(bestByKey.values());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Matching service unavailable: " + e.getMessage());
         }
