@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from ai.embedding import generate_embedding
 from ai.faiss_index import add_user_profile, get_top_matches
 from ai.db import get_user_name_by_email, get_bulk_names
@@ -16,12 +17,23 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # tighten later to your Netlify domains
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def root():
     return {
         "message": "Welcome to Match Connect Python backend. Use /add_profile to add and /match to find compatible teammates."
     }
+
+@app.get("/healthz")
+async def healthz():
+    return {"status": "ok"}
 
 @app.get("/status")
 async def get_status():

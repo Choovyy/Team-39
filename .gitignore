@@ -1,0 +1,14 @@
+# Ignore environment files with secrets
+.env*
+!.env.ec2.example
+
+# Node
+node_modules/
+
+# Maven/Gradle build outputs (if any leak to repo root)
+target/
+build/
+
+# OS
+Thumbs.db
+.DS_Store

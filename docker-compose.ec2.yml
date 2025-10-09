@@ -1,0 +1,53 @@
+version: "3.9"
+services:
+  spear-backend:
+    build:
+      context: ./SPEAR_Backend-master
+    image: team39/spear-backend:latest
+    container_name: spear-backend
+    env_file:
+      - ./.env.spear.ec2
+    environment:
+      - MATCHING_SERVICE_URL=http://match-connect:8000
+      - DB_NAME=dbspear
+      - SERVER_PORT=8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - match-connect
+    restart: unless-stopped
+
+  queueit-backend:
+    build:
+      context: ./QueueIt-Queueit-backend-revamp/capstone
+    image: team39/queueit-backend:latest
+    container_name: queueit-backend
+    env_file:
+      - ./.env.queueit.ec2
+    environment:
+      - DB_NAME=queueit2
+      - SERVER_PORT=8081
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+  match-connect:
+    build:
+      context: ./Match_connect
+    image: team39/match-connect:latest
+    container_name: match-connect
+    env_file:
+      - ./.env.ec2
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+    volumes:
+      - match-data:/app/data
+      - model-cache:/models
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  match-data:
+  model-cache:
