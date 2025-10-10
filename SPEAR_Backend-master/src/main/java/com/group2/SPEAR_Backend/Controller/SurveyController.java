@@ -14,7 +14,7 @@ import com.group2.SPEAR_Backend.Model.ProfileEntity;
 
 @RestController
 @RequestMapping("/api/survey")
-@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"}, allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173", "https://capstoneconnect.netlify.app", "https://queueit39.netlify.app"}, allowCredentials = "true")
 public class SurveyController {
 
     @Autowired
