@@ -3,8 +3,8 @@ FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    HF_HOME=/models \
-    TRANSFORMERS_CACHE=/models \
+    HF_HOME=/app/models \
+    TRANSFORMERS_CACHE=/app/models \
     TORCH_CPU_CAPABILITY=avx2
 
 WORKDIR /app
@@ -24,12 +24,18 @@ RUN pip install --upgrade pip \
 
 COPY . /app
 
-# Create mount for data persistence (FAISS index & profiles)
-RUN mkdir -p /app/data && useradd -m appuser && chown -R appuser:appuser /app
-VOLUME ["/app/data", "/models"]
+# Create user first, then directories with proper permissions
+RUN useradd -m appuser \
+    && mkdir -p /app/data /app/models \
+    && chown -R appuser:appuser /app
+
+# Pre-download the model to avoid runtime issues
+USER appuser
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
+
+VOLUME ["/app/data"]
 
 EXPOSE 8000
-USER appuser
 
 ENV HOST=0.0.0.0 PORT=8000
 
