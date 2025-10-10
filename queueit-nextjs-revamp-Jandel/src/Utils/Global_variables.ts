@@ -5,9 +5,10 @@ export const special_characters = ['"',"'",';','-','/','=','(',')','\\','%','/',
 export const lgreen = "#CCFC57"
 export const dpurple = "#7D57FC"
 
-// Prefer environment variables at build time; fall back to deployment IPs
-export const QUEUEIT_URL = process.env.NEXT_PUBLIC_QUEUEIT_URL ?? "http://3.0.89.75:8081";
-export const SPEAR_URL = process.env.NEXT_PUBLIC_SPEAR_URL ?? "http://3.0.89.75:8080";
+// Prefer environment variables at build time; fall back to same-origin proxy paths in prod, and IPs in dev
+const isProd = process.env.NODE_ENV === 'production';
+export const QUEUEIT_URL = process.env.NEXT_PUBLIC_QUEUEIT_URL ?? (isProd ? "/queueit" : "http://13.229.75.142:8081");
+export const SPEAR_URL = process.env.NEXT_PUBLIC_SPEAR_URL ?? (isProd ? "/spear" : "http://13.229.75.142:8080");
 export const SPEAR_FRONTEND_URL = "http://localhost:5173";
 
 // Previous local/network examples kept for reference:

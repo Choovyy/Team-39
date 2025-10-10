@@ -7,49 +7,44 @@
 
 import axios from 'axios';
 
-function getApiBase() {
-  // Prefer env base when provided; fallback keeps local dev behavior.
+// In production, route API calls through a same-origin proxy path to avoid
+// mixed-content (HTTPS site calling HTTP backend). Netlify will proxy /spear/*
+// to the actual backend. In dev, use VITE_API_URL_SPEAR or localhost:8080.
+const isProd = !!import.meta.env?.PROD;
+const devBase = (() => {
   const envBase = import.meta.env?.VITE_API_URL_SPEAR;
-  if (envBase && typeof envBase === 'string' && envBase.trim().length > 0) {
-    return envBase.replace(/\/$/, ''); // strip trailing slash
-  }
-  if (typeof window !== 'undefined') {
-    return `http://${window.location.hostname}:8080`;
-  }
-  // Server-side fallback (rare for Vite SPA)
+  if (envBase && typeof envBase === 'string' && envBase.trim()) return envBase.replace(/\/$/, '');
+  if (typeof window !== 'undefined') return `http://${window.location.hostname}:8080`;
   return 'http://localhost:8080';
-}
+})();
 
-const API_BASE = getApiBase();
+const API_BASE = isProd ? '/spear' : devBase;
 
 // Matches any absolute URL pointing to port 8080
 const PORT_8080_REGEX = /^https?:\/\/[^/]+:8080(\/.*)?$/i;
+
+axios.defaults.withCredentials = true;
 
 axios.interceptors.request.use((config) => {
   try {
     const url = config?.url;
     if (typeof url !== 'string') return config;
 
-    // If URL is already relative, let it pass through
-    if (url.startsWith('/') && !url.startsWith('//')) return config;
-
-    // If already points to API_BASE, do nothing
-    if (url.startsWith(API_BASE)) return config;
-
-    // If it targets any host on port 8080, rewrite to API_BASE
-    if (PORT_8080_REGEX.test(url)) {
-      // Extract path after host:port
+    // In production, rewrite absolute :8080 targets to the proxy path
+    if (isProd && PORT_8080_REGEX.test(url)) {
       const pathStart = url.indexOf(':8080') + 5; // position after :8080
       const path = url.slice(pathStart);
-      const merged = `${API_BASE}${path}`;
-      return { ...config, url: merged };
+      return { ...config, url: `${API_BASE}${path}` };
     }
 
+    // If request is already to our proxy base, leave it
+    if (isProd && url.startsWith(API_BASE)) return config;
+
+    // Otherwise, leave relative URLs as-is; dev absolute URLs go untouched
     return config;
   } catch {
     return config;
   }
 }, (error) => Promise.reject(error));
 
-// Optionally expose base for debugging
 export const SPEAR_API_BASE = API_BASE;

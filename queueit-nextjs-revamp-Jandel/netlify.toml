@@ -5,5 +5,19 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Proxy API calls to QueueIt backend
+[[redirects]]
+  from = "/queueit/*"
+  to = "http://13.229.75.142:8081/:splat"
+  status = 200
+  force = true
+
+# Proxy API calls to SPEAR backend (used by QueueIt app)
+[[redirects]]
+  from = "/spear/*"
+  to = "http://13.229.75.142:8080/:splat"
+  status = 200
+  force = true
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"
