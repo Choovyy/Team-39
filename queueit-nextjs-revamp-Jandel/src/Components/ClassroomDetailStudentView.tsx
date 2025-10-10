@@ -157,12 +157,16 @@ const GroupDetailStudentView = () => {
                 }else{
                     const err_text = await res.text()
                     // console.log(err_text)
-                    setMilestoneSet({
-                        "teamID": team.tid,
-                        "approverID": team?.adviserId ? team.adviserId : classroom.uid,
-                        "milestones": [],
-                        "teamName": team.groupName
-                      });
+                                        setMilestoneSet({
+                                                milestoneSetID: 0,
+                                                teamID: team.tid,
+                                                approverID: team?.adviserId ? team.adviserId : (classroom?.uid as number),
+                                                milestones: [],
+                                                teamName: team.groupName,
+                                                approved: false,
+                                                approvedDate: new Date().toISOString(),
+                                                completionPercentage: 0
+                                            });
                 }
             })
             .catch((err)=>{
