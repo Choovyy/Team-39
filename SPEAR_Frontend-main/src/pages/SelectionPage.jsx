@@ -24,7 +24,14 @@ const SelectionPage = () => {
       >
         <h2 className="section-title">QueueIT</h2>
         <p className="section-description">Queue Management System</p>
-        <button className="queueit-btn" disabled>Coming Soon</button>
+        <a
+          className="queueit-btn"
+          href="https://queueit39.netlify.app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open QueueIt
+        </a>
       </div>
       <div className="center-divider" />
       <div
