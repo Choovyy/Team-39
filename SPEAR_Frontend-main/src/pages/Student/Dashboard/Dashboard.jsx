@@ -95,6 +95,29 @@ const Dashboard = () => {
     fetchMe();
   }, [authState?.uid, authState?.token]);
 
+  // Helper: extract a human-readable message from Axios errors
+  const extractErrorMessage = (err) => {
+    try {
+      const res = err?.response;
+      if (res) {
+        const data = res.data;
+        if (typeof data === 'string') return data;
+        if (data && typeof data === 'object') {
+          return (
+            data.message ||
+            data.detail ||
+            data.error ||
+            (res.status ? `HTTP ${res.status}${res.statusText ? ` ${res.statusText}` : ''}` : 'Request failed')
+          );
+        }
+        return res.status ? `HTTP ${res.status}${res.statusText ? ` ${res.statusText}` : ''}` : 'Request failed';
+      }
+      return err?.message || 'Request failed';
+    } catch {
+      return 'Request failed';
+    }
+  };
+
   // Determine if a match entry is the logged-in user (by uid or email)
   const isSelf = (m) => {
     try {
@@ -136,7 +159,7 @@ const Dashboard = () => {
       setMatches(resp.data);
     } catch (e) {
       console.error(e);
-      setError(e.response?.data || e.message);
+      setError(extractErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -376,7 +399,7 @@ const Dashboard = () => {
           </button>
         </div>
         {loading && <p className="text-gray-600">Loading matches...</p>}
-        {error && <div className="text-red-600 mb-4">{String(error)}</div>}
+  {error && <div className="text-red-600 mb-4">{error}</div>}
         {!loading && filteredMatches?.length === 0 && !error && (
           <p className="text-gray-500">No matches found.</p>
         )}

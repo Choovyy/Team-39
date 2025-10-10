@@ -49,15 +49,16 @@ public class SurveyController {
     // Convenience endpoint: fetch a user's stored survey (via profile) and call AI without client needing to send survey body
     @GetMapping("/match/user/{userId}")
     public ResponseEntity<?> getMatchesForUser(@PathVariable Integer userId) {
-    userRepository.findById(userId)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        String requesterEmail = userRepository.findById(userId)
+                .map(u -> u.getEmail())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         ProfileEntity profile = profileRepository.findByUser_Uid(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found for user"));
         if (profile.getSurvey() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User has not completed survey");
         }
         SurveyDTO surveyDTO = profile.getSurvey().toDTO();
-        return ResponseEntity.ok(surveyService.getMatchesFromAISystem(surveyDTO));
+        return ResponseEntity.ok(surveyService.getMatchesFromAISystem(surveyDTO, requesterEmail));
     }
 
 
