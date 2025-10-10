@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.ResourceAccessException;
 //import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -358,7 +359,7 @@ private SurveyRepository surveyRepository;
             }
 
             return new ArrayList<>(bestByKey.values());
-        } catch (org.springframework.web.client.ResourceAccessException e) {
+        } catch (ResourceAccessException e) {
             // Connection issues (timeout/refused) → 503
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Matching service unreachable at " + matchingServiceUrl + ": " + e.getMessage());
         } catch (Exception e) {

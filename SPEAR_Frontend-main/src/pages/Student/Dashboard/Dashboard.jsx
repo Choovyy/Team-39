@@ -153,12 +153,16 @@ const Dashboard = () => {
       if(!uid){
         throw new Error('User ID not available; ensure you are logged in.');
       }
+      console.log('Fetching matches for user ID:', uid);
       const resp = await axios.get(`${API_BASE}/api/survey/match/user/${uid}`, {
         headers: { Authorization: authState.token ? `Bearer ${authState.token}` : undefined }
       });
+      console.log('Matches response:', resp.data);
       setMatches(resp.data);
     } catch (e) {
       console.error(e);
+      console.error('Full error response:', e.response);
+      console.error('Error response data:', e.response?.data);
       setError(extractErrorMessage(e));
     } finally {
       setLoading(false);
