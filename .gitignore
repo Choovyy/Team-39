@@ -1,6 +1,9 @@
 # Ignore environment files with secrets
 .env*
 !.env.ec2.example
+# Allow committed service-specific envs for EC2 deployment (contains secrets; rotate after deploy)
+!.env.spear.ec2
+!.env.queueit.ec2
 
 # Node
 node_modules/
