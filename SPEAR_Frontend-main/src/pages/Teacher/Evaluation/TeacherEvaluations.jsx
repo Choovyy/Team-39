@@ -4,6 +4,7 @@ import Navbar from "../../../components/Navbar/Navbar";
 import AuthContext from "../../../services/AuthContext";
 import * as XLSX from "xlsx";
 import axios from "axios";
+import { API_BASE } from "../../../services/apiBase";
 import { Eye } from "lucide-react"
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -53,7 +54,7 @@ const TeacherEvaluations = () => {
 
   useEffect(() => {
     axios
-      .get(`http://${address}:8080/class/${classId}`)
+  .get(`${API_BASE}/class/${classId}`)
       .then(res => setNeedsAdvisory(res.data.needsAdvisory))
       .catch(console.error);
   }, [address, classId]);
@@ -97,7 +98,7 @@ const TeacherEvaluations = () => {
     try {
       const classId = getDecryptedId("cid");
       const response = await axios.get(
-        `http://${address}:8080/teacher/class/${classId}/evaluations`
+  `${API_BASE}/teacher/class/${classId}/evaluations`
       );
       const sanitizedData = response.data.map((evaluation) => ({
         ...evaluation,
@@ -114,7 +115,7 @@ const TeacherEvaluations = () => {
   const fetchAdviserSubmissionStatus = async (evaluationId) => {
     try {
       const response = await axios.get(
-        `http://${address}:8080/teacher/evaluation/${evaluationId}/advisers/submission-status`
+  `${API_BASE}/teacher/evaluation/${evaluationId}/advisers/submission-status`
       );
       
       setAdviserSubmissionStatus(response.data);
@@ -129,7 +130,7 @@ const TeacherEvaluations = () => {
     try {
       const classId = getDecryptedId("cid");                             
       const res = await axios.get(
-        `http://${address}:8080/class/${classId}/qualified-teachers`
+  `${API_BASE}/class/${classId}/qualified-teachers`
       );
       setAdvisersByEval(prev => ({
         ...prev,
@@ -144,7 +145,7 @@ const TeacherEvaluations = () => {
   const fetchTeams = async (evaluationId) => {
     try {
       const res = await axios.get(
-        `http://${address}:8080/teacher/evaluation/${evaluationId}/teams`
+  `${API_BASE}/teacher/evaluation/${evaluationId}/teams`
       );
       setTeamsByEval(prev => ({ ...prev, [evaluationId]: res.data }));
     } catch (err) {
@@ -173,8 +174,8 @@ const TeacherEvaluations = () => {
   const fetchSubmissionStatus = async (evaluationId, teamId) => {
     try {
       const [subRes, penRes] = await Promise.all([
-        axios.get(`http://${address}:8080/teacher/evaluation/${evaluationId}/team/${teamId}/submitted-members`),
-        axios.get(`http://${address}:8080/teacher/evaluation/${evaluationId}/team/${teamId}/pending-members`)
+  axios.get(`${API_BASE}/teacher/evaluation/${evaluationId}/team/${teamId}/submitted-members`),
+  axios.get(`${API_BASE}/teacher/evaluation/${evaluationId}/team/${teamId}/pending-members`)
       ]);
       setSubmitted(subRes.data.submitted);
       setPending(penRes.data.pending);
@@ -192,7 +193,7 @@ const TeacherEvaluations = () => {
 
     try {
       const classId = getDecryptedId("cid");
-      const url = `http://${address}:8080/teacher/create-evaluation/${classId}`;
+  const url = `${API_BASE}/teacher/create-evaluation/${classId}`;
 
       const body = cleanEvaluationData({
         ...newEvaluation,
@@ -276,7 +277,7 @@ const TeacherEvaluations = () => {
     if (window.confirm("Are you sure you want to delete this evaluation?")) {
       try {
         await axios.delete(
-          `http://${address}:8080/teacher/delete-evaluation/${eid}`
+          `${API_BASE}/teacher/delete-evaluation/${eid}`
         );
         toast.success("Evaluation deleted successfully!");
         fetchEvaluations();
@@ -302,7 +303,7 @@ const TeacherEvaluations = () => {
 
     try {
       const response = await axios.put(
-        `http://${address}:8080/teacher/update-evaluation/${eid}`,
+  `${API_BASE}/teacher/update-evaluation/${eid}`,
         { ...newEvaluation, period }
       );
       toast.success("Evaluation updated successfully!");
@@ -348,7 +349,7 @@ const TeacherEvaluations = () => {
       const fetchTeamsWithMembers = async () => {
         try {
           const classId = getDecryptedId("cid");
-          const res = await axios.get(`http://${address}:8080/class/${classId}/members`);
+          const res = await axios.get(`${API_BASE}/class/${classId}/members`);
           return res.data;
         } catch (err) {
           console.error("Error fetching teams & members:", err);
@@ -360,7 +361,7 @@ const TeacherEvaluations = () => {
       const fetchAdvisersList = async () => {
         try {
           const classId = getDecryptedId("cid");
-          const res = await axios.get(`http://${address}:8080/class/${classId}/qualified-teachers`);
+          const res = await axios.get(`${API_BASE}/class/${classId}/qualified-teachers`);
           return res.data;
         } catch (err) {
           console.error("Error fetching advisers:", err);
@@ -973,7 +974,7 @@ const TeacherEvaluations = () => {
           
           // Get additional class info for the export (course code, etc.)
           const classId = getDecryptedId("cid");
-          const classInfoResponse = await axios.get(`http://${address}:8080/class/${classId}`);
+          const classInfoResponse = await axios.get(`${API_BASE}/class/${classId}`);
           
           // Combine evaluation info with class info
           const exportInfo = {
@@ -985,8 +986,8 @@ const TeacherEvaluations = () => {
       
           // Fetch submissions and responses in parallel
           const [subRes, respRes] = await Promise.all([
-            axios.get(`http://${address}:8080/submissions/by-evaluation/${eid}`),
-            axios.get(`http://${address}:8080/responses/get-evaluation/${eid}`)
+            axios.get(`${API_BASE}/submissions/by-evaluation/${eid}`),
+            axios.get(`${API_BASE}/responses/get-evaluation/${eid}`)
           ]);
           const submissions = subRes.data;  // Array<ResponseDTO>
           const responses = respRes.data;   // Array<ResponseDTO>

@@ -5,6 +5,7 @@ import AuthContext from '../../../services/AuthContext';
 import LogoutButton from '../../../components/Auth/LogoutButton';
 import Navbar from '../../../components/Navbar/Navbar';
 import ViewPersonality from '../../../components/Modals/ViewPersonality';
+import { API_BASE } from '../../../services/apiBase';
 
 /* Dashboard page: fetches AI match recommendations and displays them.
    NOTE (backend): match objects should include contact fields:
@@ -26,7 +27,39 @@ const Dashboard = () => {
   const [skillFilter, setSkillFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [interestFilter, setInterestFilter] = useState("");
-  const address = window.location.hostname;
+  // Helper: normalize plain text values from possibly nested objects
+  const normalizeText = (val) => {
+    if (val == null) return '';
+    if (typeof val === 'string') return val.trim();
+    if (typeof val === 'number') return String(val);
+    if (typeof val === 'object') {
+      // Try common keys in order
+      const keys = ['fullName', 'name', 'title', 'label', 'value', 'text'];
+      for (const k of keys) {
+        if (val[k] && typeof val[k] === 'string') return val[k].trim();
+      }
+      // Try firstName/lastName composition
+      const composed = [val.firstName || val.firstname, val.lastName || val.lastname]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      if (composed) return composed;
+      return '';
+    }
+    return '';
+  };
+
+  const buildDisplayName = (m) => {
+    const fromName = normalizeText(m?.name);
+    if (fromName) return fromName;
+    const fromNested = normalizeText(m?.user) || normalizeText(m?.profile) || '';
+    if (fromNested) return fromNested;
+    const composed = [m?.firstName || m?.firstname, m?.lastName || m?.lastname]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    return composed || 'Unknown User';
+  };
   
   // Pagination
   const [page, setPage] = useState(1);
@@ -49,7 +82,7 @@ const Dashboard = () => {
     const fetchMe = async () => {
       try {
         if (!authState?.uid) return;
-        const resp = await axios.get(`http://${address}:8080/get-student/${authState.uid}` , {
+        const resp = await axios.get(`${API_BASE}/get-student/${authState.uid}` , {
           headers: { Authorization: authState.token ? `Bearer ${authState.token}` : undefined }
         });
         const email = resp?.data?.email ? String(resp.data.email) : '';
@@ -60,7 +93,7 @@ const Dashboard = () => {
       }
     };
     fetchMe();
-  }, [authState?.uid, authState?.token, address]);
+  }, [authState?.uid, authState?.token]);
 
   // Determine if a match entry is the logged-in user (by uid or email)
   const isSelf = (m) => {
@@ -97,7 +130,7 @@ const Dashboard = () => {
       if(!uid){
         throw new Error('User ID not available; ensure you are logged in.');
       }
-      const resp = await axios.get(`http://${address}:8080/api/survey/match/user/${uid}`, {
+      const resp = await axios.get(`${API_BASE}/api/survey/match/user/${uid}`, {
         headers: { Authorization: authState.token ? `Bearer ${authState.token}` : undefined }
       });
       setMatches(resp.data);
@@ -127,8 +160,9 @@ const Dashboard = () => {
     if (!emailPattern.test(rawEmail)) return null;
 
     const subject = encodeURIComponent('Collaboration Opportunity - CapstoneConnect');
+    const nameForEmail = buildDisplayName(matchObj);
     const bodyLines = [
-      `Hi ${matchObj?.name || 'there'},`,
+      `Hi ${nameForEmail || 'there'},`,
       ``,
       `I saw your profile on the CapstoneConnect Match Dashboard and would like to collaborate on a project / form a team.`,
       `Preferred Roles: ${
@@ -177,13 +211,24 @@ const Dashboard = () => {
 
   // Helper: personality title (first phrase before '(' or '.')
   const getPersonalityTitle = (p) => {
-    if(!p) return '';
-    return p.split('(')[0].split('.')[0].trim();
+    if (!p) return '';
+    if (typeof p === 'string') return p.split('(')[0].split('.')[0].trim();
+    if (typeof p === 'object') {
+      const fromObj = normalizeText(p.title || p.name || p.type || p.archetype);
+      return fromObj.split('(')[0].split('.')[0].trim();
+    }
+    return '';
   };
 
   // Extract descriptive traits: take text inside the first parentheses BEFORE "Scores"
   const extractTraits = (p) => {
     if (!p) return '';
+    if (typeof p === 'object') {
+      if (Array.isArray(p.traits)) return p.traits.filter(Boolean).join(', ');
+      if (typeof p.traits === 'string') return p.traits;
+      if (typeof p.summary === 'string') return p.summary;
+      return '';
+    }
     const beforeScores = p.split(/Scores:/i)[0] || p;
     const paren = beforeScores.match(/\(([^)]*)\)/);
     return paren && paren[1] ? paren[1].trim() : '';
@@ -238,22 +283,38 @@ const Dashboard = () => {
     ...ALL_ARCHETYPES,
     ...matches.map(m => getPersonalityTitle(m.personality)).filter(Boolean)
   ])).sort();
-  const skills = Array.from(new Set(matches.flatMap(m => Array.isArray(m.technicalSkills) ? m.technicalSkills.map(ts => typeof ts === 'object' && ts.skill ? ts.skill : ts) : []).filter(Boolean)));
-  const roles = Array.from(new Set(matches.flatMap(m => Array.isArray(m.preferredRoles) ? m.preferredRoles.map(r => typeof r === 'object' && r.role ? r.role : r) : []).filter(Boolean)));
-  const interests = Array.from(new Set(matches.flatMap(m => Array.isArray(m.projectInterests) ? m.projectInterests : []).filter(Boolean)));
+  const skills = Array.from(new Set(
+    matches.flatMap(m => Array.isArray(m.technicalSkills)
+      ? m.technicalSkills.map(ts => (typeof ts === 'object' && ts.skill ? ts.skill : ts))
+      : [])
+    .filter(Boolean)
+  ));
+  const roles = Array.from(new Set(
+    matches.flatMap(m => Array.isArray(m.preferredRoles)
+      ? m.preferredRoles.map(r => (typeof r === 'object' && r.role ? r.role : r))
+      : [])
+    .filter(Boolean)
+  ));
+  const interests = Array.from(new Set(
+    matches
+      .flatMap(m => Array.isArray(m.projectInterests) ? m.projectInterests : [])
+      .map(pi => normalizeText(pi))
+      .filter(Boolean)
+  ));
 
   // Filtering logic + robust self exclusion by uid/email
   const filteredMatches = matches.filter(m => {
     if (isSelf(m)) return false;
     // Team-based visibility
     if (!teamEligible(m)) return false;
-    const nameMatch = !search || m.name?.toLowerCase().includes(search.toLowerCase());
+    const displayName = buildDisplayName(m);
+    const nameMatch = !search || displayName.toLowerCase().includes(search.toLowerCase());
     const personalityTitle = getPersonalityTitle(m.personality);
     const personalityMatch = !personalityFilter || personalityTitle === personalityFilter;
     const skillMatch = !skillFilter || (Array.isArray(m.technicalSkills) && m.technicalSkills.some(ts => {
       const val = typeof ts === 'object' && ts.skill ? ts.skill : ts; return val === skillFilter; }));
     const roleMatch = !roleFilter || (Array.isArray(m.preferredRoles) && m.preferredRoles.some(r => { const val = typeof r === 'object' && r.role ? r.role : r; return val === roleFilter;}));
-    const interestMatch = !interestFilter || (Array.isArray(m.projectInterests) && m.projectInterests.includes(interestFilter));
+    const interestMatch = !interestFilter || (Array.isArray(m.projectInterests) && m.projectInterests.some(pi => normalizeText(pi) === interestFilter));
     return nameMatch && personalityMatch && skillMatch && roleMatch && interestMatch;
   });
 
@@ -364,7 +425,7 @@ const Dashboard = () => {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h2 id={`match-${idx}-name`} className="font-semibold text-teal text-lg">{m.name || 'Unknown User'}</h2>
+                      <h2 id={`match-${idx}-name`} className="font-semibold text-teal text-lg">{buildDisplayName(m)}</h2>
                       <div className="mt-1 flex flex-wrap items-center gap-2">
                         <span className="text-xs text-gray-500 font-medium mr-1">Primary:</span>
                         {primaryRole ? (

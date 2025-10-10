@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Navbar from "../../../components/Navbar/Navbar";
 import AuthContext from "../../../services/AuthContext";
 import axios from "axios";
+import { API_BASE } from "../../../services/apiBase";
 import TeacherImportSetModal from "../../../components/Modals/TeacherImportSetModal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -43,7 +44,7 @@ const TeacherQuestions = () => {
     try {
       const evaluationId = getDecryptedId("eid");
       const response = await axios.get(
-        `http://${address}:8080/get-questions-by-evaluation/${evaluationId}`
+  `${API_BASE}/get-questions-by-evaluation/${evaluationId}`
       );
       setQuestions(response.data);
     } catch (error) {
@@ -80,7 +81,7 @@ const TeacherQuestions = () => {
       }
   
       const response = await axios.post(
-        `http://${address}:8080/teacher/create-question/${classId}/${evaluationId}`,
+  `${API_BASE}/teacher/create-question/${classId}/${evaluationId}`,
         questionPayload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -111,7 +112,7 @@ const TeacherQuestions = () => {
 
     try {
       const response = await axios.put(
-        `http://${address}:8080/teacher/update-question/${qid}`,
+  `${API_BASE}/teacher/update-question/${qid}`,
         {
           questionTitle: editQuestion.questionTitle,
           questionDetails: editQuestion.questionDetails,
@@ -139,7 +140,7 @@ const TeacherQuestions = () => {
 
     try {
       await axios.delete(
-        `http://${address}:8080/teacher/delete-question/${questionId}`
+  `${API_BASE}/teacher/delete-question/${questionId}`
       );
       setQuestions((prev) => prev.filter((q) => q.questionId !== questionId));
       toast.success('Delete success!');
@@ -158,7 +159,7 @@ const TeacherQuestions = () => {
   const fetchImportedSets = async () => {
     try {
       const evaluationId = getDecryptedId("eid");
-      const response = await axios.get(`http://${address}:8080/teacher/get-imported-sets/${evaluationId}`);
+  const response = await axios.get(`${API_BASE}/teacher/get-imported-sets/${evaluationId}`);
       setImportedSets(response.data || []);
     } catch (error) {
       console.error("Error fetching imported sets:", error);
@@ -171,7 +172,7 @@ const TeacherQuestions = () => {
     try {
       const evaluationId = getDecryptedId("eid");
       await axios.delete(
-        `http://${address}:8080/teacher/delete-questions-by-set/${setId}/for-evaluation/${evaluationId}`
+  `${API_BASE}/teacher/delete-questions-by-set/${setId}/for-evaluation/${evaluationId}`
       );
       setImportedSets((prev) => prev.filter((set) => set.id !== setId));
       fetchQuestions();
@@ -239,7 +240,7 @@ const TeacherQuestions = () => {
   
     try {
       await axios.post(
-        `http://${address}:8080/teacher/save-as-template/${evaluationId}`,
+  `${API_BASE}/teacher/save-as-template/${evaluationId}`,
         { name: templateSetName },
         { headers: { Authorization: `Bearer ${token}` } }
       );

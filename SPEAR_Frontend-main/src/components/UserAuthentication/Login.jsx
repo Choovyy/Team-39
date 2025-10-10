@@ -26,19 +26,15 @@ const Login = () => {
 
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-  const address = getIpAddress();
-
-  function getIpAddress() {
-    const hostname = window.location.hostname;
-    const indexOfColon = hostname.indexOf(":");
-    return indexOfColon !== -1 ? hostname.substring(0, indexOfColon) : hostname;
-  }
+  // Use same-origin proxy base in production; falls back to hostname:8080 in dev.
+  const isProd = import.meta.env?.PROD;
+  const API_BASE = isProd ? '/spear' : (typeof window !== 'undefined' ? `http://${window.location.hostname}:8080` : 'http://localhost:8080');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      const response = await axios.post(`http://${address}:8080/login`, { email, password });
+  const response = await axios.post(`${API_BASE}/login`, { email, password });
       const data = response.data;
       if (!data || !data.token || !data.role) throw new Error("Invalid Credentials.");
       login(data.token, data.role, data.refreshToken, data.uid);
@@ -46,7 +42,7 @@ const Login = () => {
       // Route by role, and for students, branch on firstTimeUser via lightweight endpoint
       if (data.role === "STUDENT") {
         try {
-          const res = await axios.get(`http://${address}:8080/user/${data.uid}/first-time`);
+          const res = await axios.get(`${API_BASE}/user/${data.uid}/first-time`);
           const isFirst = !!res.data?.firstTimeUser;
           navigate(isFirst ? "/survey" : "/student-ai-dashboard");
         } catch (e) {
@@ -88,7 +84,7 @@ const Login = () => {
     setSendingCode(true);
     
     try {
-      const res = await axios.post(`http://${address}:8080/user/forgot-password`, { email: forgotEmail });
+      const res = await axios.post(`${API_BASE}/user/forgot-password`, { email: forgotEmail });
       if (res.data.statusCode === 200) {
         setModalMessage("Reset code sent. Check your email.");
         setResetStep(2);
@@ -143,7 +139,7 @@ const Login = () => {
     setResettingPassword(true);
   
     try {
-      const res = await axios.post(`http://${address}:8080/user/reset-password`, {
+      const res = await axios.post(`${API_BASE}/user/reset-password`, {
         email: forgotEmail,
         token: resetToken,
         newPassword,

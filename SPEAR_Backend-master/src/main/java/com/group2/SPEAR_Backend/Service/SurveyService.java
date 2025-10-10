@@ -41,6 +41,13 @@ private SurveyRepository surveyRepository;
     @Value("${matching.service.url}")
     private String matchingServiceUrl;
 
+    @Autowired
+    public void logConfiguredMatchingServiceUrl() {
+        try {
+            System.out.println("[SPEAR] matching.service.url = " + matchingServiceUrl);
+        } catch (Exception ignored) {}
+    }
+
     public SurveyDTO getSurveyByProfileId(Long profileId) {
         ProfileEntity profile = profileRepository.findById(profileId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));

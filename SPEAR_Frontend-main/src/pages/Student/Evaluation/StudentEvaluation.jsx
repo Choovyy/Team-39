@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../../../services/apiBase";
 import AuthContext from "../../../services/AuthContext";
 import { useLocation } from "react-router-dom";
 import ConfirmSubmitModal from "../../../components/Modals/ConfirmSubmitModal";
@@ -55,7 +56,7 @@ const StudentEvaluation = () => {
 
   const fetchQuestions = async () => {
     try {
-      const response = await axios.get(`http://${address}:8080/get-questions-by-evaluation/${evaluationId}`);
+  const response = await axios.get(`${API_BASE}/get-questions-by-evaluation/${evaluationId}`);
       setQuestions(response.data || []);
     } catch (error) {
       console.error("Error fetching questions:", error);
@@ -64,7 +65,7 @@ const StudentEvaluation = () => {
 
   const fetchTeamMembers = async () => {
     try {
-      const response = await axios.get(`http://${address}:8080/evaluation/${studentId}/class/${classId}/team`);
+  const response = await axios.get(`${API_BASE}/evaluation/${studentId}/class/${classId}/team`);
       if (!Array.isArray(response.data.memberIds) || !Array.isArray(response.data.memberNames)) {
         console.error("Unexpected response format for team members:", response.data);
         return;
@@ -178,7 +179,7 @@ const handleSubmit = async (e) => {
 
     try {
       await axios.post(
-        `http://${address}:8080/responses/submit?evaluationId=${evaluationId}&evaluatorId=${studentId}&classId=${classId}`,
+  `${API_BASE}/responses/submit?evaluationId=${evaluationId}&evaluatorId=${studentId}&classId=${classId}`,
         responseList  
       );
     
