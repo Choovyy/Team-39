@@ -1,12 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import logoLight from "../../assets/imgs/cc_logo_light.png";
+import backgroundHome from "../../assets/imgs/background_home.png";
 
 const Home = () => {
   return (
     <div
       className="relative h-screen w-screen m-0 p-0 bg-cover bg-center bg-no-repeat bg-fixed"
       style={{
-        backgroundImage: "url('/src/assets/imgs/background_home.png')",
+        backgroundImage: `url(${backgroundHome})`,
       }}
     >
       {/* Dark Overlay */}
@@ -37,8 +39,8 @@ const Home = () => {
         {/* Right Grid */}
         <div className="flex items-center justify-center">
           <img
-            src="src/assets/imgs/cc_logo_light.png"
-            alt="SPEAR Logo"
+            src={logoLight}
+            alt="CapstoneConnect Logo"
             className="max-w-full h-auto mr-10 mb-10"
           />
         </div>
