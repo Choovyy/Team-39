@@ -11,6 +11,10 @@ const SelectionPage = () => {
     navigate('/landing');
   };
 
+  const handleQueueitClick = () => {
+    window.open('https://queueit39.netlify.app', '_blank', 'noopener,noreferrer');
+  };
+
   let containerClass = 'selection-container';
   if (hovered === 'queueit') containerClass += ' queueit-hover';
   if (hovered === 'spear') containerClass += ' spear-hover';
@@ -24,7 +28,7 @@ const SelectionPage = () => {
       >
         <h2 className="section-title">QueueIT</h2>
         <p className="section-description">Queue Management System</p>
-        <button className="queueit-btn" disabled>Coming Soon</button>
+        <button className="spear-btn" onClick={handleQueueitClick}>Enter Queueit</button>
       </div>
       <div className="center-divider" />
       <div

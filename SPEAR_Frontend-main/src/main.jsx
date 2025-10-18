@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./services/AuthContext";
+// Register global axios interceptor that rewrites :8080 URLs to VITE_API_URL_SPEAR in production
+import "./services/axiosConfig";
 import "./styles/index.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

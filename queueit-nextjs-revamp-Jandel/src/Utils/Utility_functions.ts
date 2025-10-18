@@ -1,7 +1,7 @@
 import { special_characters } from "./Global_variables"
-import Person1 from '../../public/images/Person1.png'
-import Person2 from '../../public/images/Person2.png'
-import Person3 from '../../public/images/Person3.png'
+import Person1 from '../../public/images/person1.png'
+import Person2 from '../../public/images/person2.png'
+import Person3 from '../../public/images/person3.png'
 import Person4 from '../../public/images/person4.png'
 import Person5 from '../../public/images/person5.png'
 // import Person6 from '../../public/images/pointingUpwardPerson.png'

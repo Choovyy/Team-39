@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/personality")
-@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"}, allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173", "https://capstoneconnect.netlify.app", "https://queueit39.netlify.app"}, allowCredentials = "true")
 public class PersonalityController {
 
     @Autowired

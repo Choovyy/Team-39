@@ -14,13 +14,8 @@ export const AuthProvider = ({ children }) => {
   });
 
 
-  const address = getIpAddress();
-
-  function getIpAddress() {
-    const hostname = window.location.hostname;
-    const indexOfColon = hostname.indexOf(":");
-    return indexOfColon !== -1 ? hostname.substring(0, indexOfColon) : hostname;
-  }
+  const isProd = import.meta.env?.PROD;
+  const API_BASE = isProd ? '/spear' : (typeof window !== 'undefined' ? `http://${window.location.hostname}:8080` : 'http://localhost:8080');
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -89,7 +84,7 @@ export const AuthProvider = ({ children }) => {
 
   const refreshAccessToken = async (refreshToken) => {
     try {
-      const response = await axios.post(`http://${address}:8080/refresh-token`, {
+  const response = await axios.post(`${API_BASE}/refresh-token`, {
         token: refreshToken,
       });
 

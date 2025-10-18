@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import axios from "axios";
+import { API_BASE } from "../../../services/apiBase";
 import Navbar from "../../../components/Navbar/Navbar";
 import AuthContext from "../../../services/AuthContext";
 import { FiX } from "react-icons/fi";
@@ -27,7 +28,7 @@ const TeacherAdvisoryRequest = () => {
       const statusParam =
         statusFilter === "ALL" ? "all-requests" : `requests/${statusFilter}`;
       const res = await axios.get(
-        `http://${address}:8080/adviser/${authState.uid}/${statusParam}`,
+  `${API_BASE}/adviser/${authState.uid}/${statusParam}`,
         {
           headers: { Authorization: `Bearer ${authState.token}` },
         }
@@ -43,7 +44,7 @@ const TeacherAdvisoryRequest = () => {
   const handleAccept = async (requestId) => {
     try {
       await axios.post(
-        `http://${address}:8080/advisory-requests/${requestId}/accept`
+  `${API_BASE}/advisory-requests/${requestId}/accept`
       );
       toast.success("Request accepted");
       fetchRequests();
@@ -56,7 +57,7 @@ const TeacherAdvisoryRequest = () => {
   const handleDecline = async () => {
     try {
       await axios.post(
-        `http://${address}:8080/advisory-requests/${declineModal}/decline`,
+  `${API_BASE}/advisory-requests/${declineModal}/decline`,
         { reason: declineReason }
       );
       toast.success("Request declined.");
@@ -87,7 +88,7 @@ const TeacherAdvisoryRequest = () => {
   const handleApproveLeave = async (requestId) => {
     try {
       await axios.post(
-        `http://${address}:8080/advisory-requests/${requestId}/handle-leave`,
+  `${API_BASE}/advisory-requests/${requestId}/handle-leave`,
         {
           approve: true,
         }
@@ -103,7 +104,7 @@ const TeacherAdvisoryRequest = () => {
   const handleDeclineLeave = async (requestId) => {
     try {
       await axios.post(
-        `http://${address}:8080/advisory-requests/${requestId}/handle-leave`,
+  `${API_BASE}/advisory-requests/${requestId}/handle-leave`,
         {
           approve: false,
           reason: "Leave request denied. Adviser remains assigned.",
@@ -123,7 +124,7 @@ const TeacherAdvisoryRequest = () => {
 
     try {
       await axios.delete(
-        `http://${address}:8080/advisory-requests/${requestId}`
+  `${API_BASE}/advisory-requests/${requestId}`
       );
       toast.success("Request deleted successfully.");
       fetchRequests();

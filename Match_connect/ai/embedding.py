@@ -1,9 +1,20 @@
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import logging
+import os
 
 logger = logging.getLogger(__name__)
-model = SentenceTransformer("all-MiniLM-L6-v2")  # Fast and compact
+
+# Initialize model with better error handling
+try:
+    # Set cache directory to app-writable location
+    cache_dir = os.environ.get('HF_HOME', '/app/models')
+    logger.info(f"Loading SentenceTransformer model, cache dir: {cache_dir}")
+    model = SentenceTransformer("all-MiniLM-L6-v2", cache_folder=cache_dir)
+    logger.info("SentenceTransformer model loaded successfully")
+except Exception as e:
+    logger.error(f"Failed to load SentenceTransformer model: {str(e)}")
+    raise
 #AI Type: Natural Language Processing (NLP) model
 
 def generate_embedding(text: str):

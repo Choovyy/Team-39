@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE } from "../../../services/apiBase";
 import AuthContext from "../../../services/AuthContext";
 import ConfirmSubmitModal from "../../../components/Modals/ConfirmSubmitModal";
 import { toast, ToastContainer } from "react-toastify";
@@ -55,7 +56,7 @@ const StudentTeacherEvaluation = () => {
 
   const fetchQuestions = async () => {
     try {
-      const res = await axios.get(`http://${address}:8080/get-questions-by-evaluation/${evaluationId}`);
+  const res = await axios.get(`${API_BASE}/get-questions-by-evaluation/${evaluationId}`);
       setQuestions(res.data || []);
     } catch (err) {
       console.error("Error fetching questions:", err);
@@ -64,10 +65,10 @@ const StudentTeacherEvaluation = () => {
 
   const fetchTeamData = async () => {
     try {
-      const teamRes = await axios.get(`http://${address}:8080/evaluation/${studentId}/class/${classId}/team`);
+  const teamRes = await axios.get(`${API_BASE}/evaluation/${studentId}/class/${classId}/team`);
       const teamId = teamRes.data.tid;
   
-      const res = await axios.get(`http://${address}:8080/team/${teamId}/members-and-adviser`);
+  const res = await axios.get(`${API_BASE}/team/${teamId}/members-and-adviser`);
       setAdviserName(res.data.adviserName || "Unknown Adviser");
       setAdviserId(res.data.adviserId || null); 
     } catch (err) {
@@ -144,7 +145,7 @@ const StudentTeacherEvaluation = () => {
     // 5) User confirmation via modal dialog is already implemented in the UI
     try {
       await axios.post(
-        `http://${address}:8080/responses/submit-adviser?evaluationId=${evaluationId}&evaluatorId=${studentId}&classId=${classId}`,
+  `${API_BASE}/responses/submit-adviser?evaluationId=${evaluationId}&evaluatorId=${studentId}&classId=${classId}`,
         responseList
       );
       toast.success("Evaluation successfully submitted!");
