@@ -5,17 +5,12 @@ export const special_characters = ['"',"'",';','-','/','=','(',')','\\','%','/',
 export const lgreen = "#CCFC57"
 export const dpurple = "#7D57FC"
 
-// Prefer environment variables at build time; fall back to same-origin proxy paths in prod, and IPs in dev
-const isProd = process.env.NODE_ENV === 'production';
-export const QUEUEIT_URL = process.env.NEXT_PUBLIC_QUEUEIT_URL ?? (isProd ? "/queueit" : "http://13.229.75.142:8081");
-export const SPEAR_URL = process.env.NEXT_PUBLIC_SPEAR_URL ?? (isProd ? "/spear" : "http://13.229.75.142:8080");
+export const QUEUEIT_URL = "http://localhost:8081";
+export const SPEAR_URL = "http://localhost:8080";
 export const SPEAR_FRONTEND_URL = "http://localhost:5173";
 
-// Previous local/network examples kept for reference:
-// export const QUEUEIT_URL = "http://localhost:8081";
-// export const SPEAR_URL = "http://localhost:8080";
-// export const QUEUEIT_URL = "http://172.16.103.209:8081";
-// export const SPEAR_URL = "http://172.16.103.209:8080";
+//export const QUEUEIT_URL = "http://172.16.103.209:8081"
+//export const SPEAR_URL = "http://172.16.103.209:8080"
 //export const SPEAR_FRONTEND_URL = "http://172.16.103.209"
 
 export interface DonutDataset{
@@ -296,7 +291,6 @@ export interface AnalyticsResult{
 export interface DataEntry{
     data: Array<number>
     backgroundColor: Array<string>
-    label?: string
 }
 
 export interface DataEntryv2{
@@ -304,8 +298,6 @@ export interface DataEntryv2{
     backgroundColor: string
     borderColor:string
     pointBackgroundColor:string
-    label?: string
-    fill?: boolean
 }
 
 export interface RadarData{

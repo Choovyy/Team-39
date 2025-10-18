@@ -3,7 +3,6 @@ import Navbar from "../../../components/Navbar/Navbar";
 import AuthContext from "../../../services/AuthContext";
 import RejectModal from "../../../components/Modals/RejectModal";
 import axios from "axios";
-import { API_BASE } from "../../../services/apiBase";
 import { toast, ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css';
 import { Check, X, Info } from "lucide-react";
@@ -26,7 +25,13 @@ const TeamApplications = () => {
   // Info modal for compatibility details
   const [infoModal, setInfoModal] = useState({ isOpen: false, scores: null, name: "" });
 
-  
+  const address = getIpAddress();
+
+  function getIpAddress() {
+    const hostname = window.location.hostname;
+    const indexOfColon = hostname.indexOf(":");
+    return indexOfColon !== -1 ? hostname.substring(0, indexOfColon) : hostname;
+  }
 
   useEffect(() => {
     fetchApplications();
@@ -36,7 +41,7 @@ const TeamApplications = () => {
     setLoading(true);
   
     try {
-  const leaderTeamsResponse = await axios.get(`${API_BASE}/user/${authState.uid}/leader-teams`);
+      const leaderTeamsResponse = await axios.get(`http://${address}:8080/user/${authState.uid}/leader-teams`);
   
       if (leaderTeamsResponse.status === 200 && leaderTeamsResponse.data.length > 0) {
         const teamIds = leaderTeamsResponse.data.map(team => team.tid);
@@ -46,7 +51,7 @@ const TeamApplications = () => {
   
         const pendingApplicationsData = await Promise.all(
           decryptedTeamIds.map(async (tid) => {
-            const response = await axios.get(`${API_BASE}/team/${tid}/pending-applications`);
+            const response = await axios.get(`http://${address}:8080/team/${tid}/pending-applications`);
             return response.data;
           })
         );
@@ -62,12 +67,12 @@ const TeamApplications = () => {
         }
       }
   
-  const myApplicationsResponse = await axios.get(`${API_BASE}/student/${authState.uid}/my-applications`);
+      const myApplicationsResponse = await axios.get(`http://${address}:8080/student/${authState.uid}/my-applications`);
       if (myApplicationsResponse.status === 200) {
         setMyApplications(myApplicationsResponse.data);
       }
   
-  const invitesResponse = await axios.get(`${API_BASE}/invitations/student/${authState.uid}`);
+      const invitesResponse = await axios.get(`http://${address}:8080/invitations/student/${authState.uid}`);
       if (invitesResponse.status === 200) {
         setTeamInvites(invitesResponse.data);
       }
@@ -135,7 +140,7 @@ const TeamApplications = () => {
     let leaderMatches = [];
     try {
       const leaderRes = await axios.get(
-  `${API_BASE}/api/survey/match/user/${leaderId}`,
+        `http://${address}:8080/api/survey/match/user/${leaderId}`,
         { headers }
       );
       leaderMatches = Array.isArray(leaderRes.data) ? leaderRes.data : [];
@@ -204,7 +209,7 @@ const TeamApplications = () => {
       Object.entries(byApplicant).map(async ([applicantId, applicantApps]) => {
         try {
           const res = await axios.get(
-            `${API_BASE}/api/survey/match/user/${applicantId}`,
+            `http://${address}:8080/api/survey/match/user/${applicantId}`,
             { headers }
           );
           const matches = Array.isArray(res.data) ? res.data : [];
@@ -266,8 +271,8 @@ const TeamApplications = () => {
   const handleInviteResponse = async (invitationId, isAccepted) => {
     try {
       const endpoint = isAccepted
-  ? `${API_BASE}/invitations/accept/${invitationId}`
-  : `${API_BASE}/invitations/reject/${invitationId}`;
+        ? `http://${address}:8080/invitations/accept/${invitationId}`
+        : `http://${address}:8080/invitations/reject/${invitationId}`;
 
       await axios.put(endpoint);
       toast.success(isAccepted ? "Invitation accepted!" : "Invitation rejected.");
@@ -280,7 +285,7 @@ const TeamApplications = () => {
 
   const handleAccept = async (recruitmentId) => {
     try {
-  await axios.post(`${API_BASE}/student/review/${recruitmentId}`, {
+      await axios.post(`http://${address}:8080/student/review/${recruitmentId}`, {
         isAccepted: true,
       });
       toast.success("Application accepted!");
@@ -328,7 +333,7 @@ const TeamApplications = () => {
 
   const handleReject = async () => {
     try {
-  await axios.post(`${API_BASE}/student/review/${rejectModal.recruitmentId}`, {
+      await axios.post(`http://${address}:8080/student/review/${rejectModal.recruitmentId}`, {
         isAccepted: false,
         leaderReason: rejectReason,
       });

@@ -4,7 +4,6 @@ import Navbar from "../../../components/Navbar/Navbar";
 import AuthContext from "../../../services/AuthContext";
 import MembersTable from "../../../components/Tables/MembersTable";
 import axios from "axios";
-import { API_BASE } from "../../../services/apiBase";
 import { FileText, Settings, UserPlus, ChevronRight, Users } from "lucide-react";
 import AddTeamMembersModal from "../../../components/Modals/AddTeamMembersModal";
 
@@ -28,7 +27,13 @@ const StudentClassPage = () => {
   const [isAddMemberModalOpen, setIsAddMemberModalOpen] = useState(false);
 
   const userId = authState.uid;
-  
+  const address = getIpAddress();
+
+  function getIpAddress() {
+    const hostname = window.location.hostname;
+    const idx = hostname.indexOf(":");
+    return idx !== -1 ? hostname.substring(0, idx) : hostname;
+  }
 
   // 1) Fetch class details and set classId
   useEffect(() => {
@@ -36,7 +41,7 @@ const StudentClassPage = () => {
       setLoading(true);
       try {
         const { data, status } = await axios.get(
-          `${API_BASE}/class/${courseCode}/${section}`
+          `http://${address}:8080/class/${courseCode}/${section}`
         );
         if (status === 200 && data?.classes) {
           const cls = data.classes;
@@ -66,12 +71,12 @@ const StudentClassPage = () => {
     };
 
     fetchClassDetails();
-  }, [courseCode, section, storeEncryptedId]);
+  }, [courseCode, section, storeEncryptedId, address]);
 
   const fetchTotalMembers = async (cid) => {
     try {
       const { data, status } = await axios.get(
-        `${API_BASE}/class/${cid}/total-users`
+        `http://${address}:8080/class/${cid}/total-users`
       );
       if (status === 200) setTotalMembers(data);
     } catch (err) {
@@ -87,7 +92,7 @@ const StudentClassPage = () => {
       try {
         // Student info
         const studentRes = await axios.get(
-          `${API_BASE}/get-student/${userId}`,
+          `http://${address}:8080/get-student/${userId}`,
           { headers: { Authorization: `Bearer ${authState.token}` } }
         );
         setUserData({
@@ -97,7 +102,7 @@ const StudentClassPage = () => {
 
         // Team info
         const teamRes = await axios.get(
-          `${API_BASE}/team/my/${classId}/${userId}`,
+          `http://${address}:8080/team/my/${classId}/${userId}`,
           { headers: { Authorization: `Bearer ${authState.token}` } }
         );
         if (teamRes.status === 200 && teamRes.data) {
@@ -114,12 +119,12 @@ const StudentClassPage = () => {
     };
 
     fetchInitialData();
-  }, [classId, userId, authState.token, storeEncryptedId]);
+  }, [classId, userId, authState.token, address, storeEncryptedId]);
 
   const fetchStudents = async () => {
     try {
       const { data, status } = await axios.get(
-        `${API_BASE}/class/${classDetails.classKey}/students`
+        `http://${address}:8080/class/${classDetails.classKey}/students`
       );
       if (status === 200) {
         setStudents(data);

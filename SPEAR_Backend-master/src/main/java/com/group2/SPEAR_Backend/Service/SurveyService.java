@@ -23,7 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.ResourceAccessException;
 //import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -41,13 +40,6 @@ private SurveyRepository surveyRepository;
 
     @Value("${matching.service.url}")
     private String matchingServiceUrl;
-
-    @Autowired
-    public void logConfiguredMatchingServiceUrl() {
-        try {
-            System.out.println("[SPEAR] matching.service.url = " + matchingServiceUrl);
-        } catch (Exception ignored) {}
-    }
 
     public SurveyDTO getSurveyByProfileId(Long profileId) {
         ProfileEntity profile = profileRepository.findById(profileId)
@@ -189,15 +181,7 @@ private SurveyRepository surveyRepository;
             }
             e.printStackTrace(); // Added for more detailed debugging
         }
-    }
-
-    // Backward-compatible entry point (no email)
-    public List<MatchResultDTO> getMatchesFromAISystem(SurveyDTO surveyDTO) {
-        return getMatchesFromAISystem(surveyDTO, null);
-    }
-
-    // New entry point: allow passing caller email to help matching layer exclude self explicitly
-    public List<MatchResultDTO> getMatchesFromAISystem(SurveyDTO surveyDTO, String requesterEmail) {
+    }  public List<MatchResultDTO> getMatchesFromAISystem(SurveyDTO surveyDTO) {
         if (surveyDTO == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Survey data cannot be null");
         }
@@ -213,9 +197,6 @@ private SurveyRepository surveyRepository;
         requestBody.put("preferredRoles", surveyDTO.getPreferredRoles());
         requestBody.put("projectInterests", surveyDTO.getProjectInterests());
         requestBody.put("personality", surveyDTO.getPersonality());
-        if (requesterEmail != null && !requesterEmail.isBlank()) {
-            requestBody.put("email", requesterEmail);
-        }
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
@@ -359,11 +340,8 @@ private SurveyRepository surveyRepository;
             }
 
             return new ArrayList<>(bestByKey.values());
-        } catch (ResourceAccessException e) {
-            // Connection issues (timeout/refused) → 503
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Matching service unreachable at " + matchingServiceUrl + ": " + e.getMessage());
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Matching service error: " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Matching service unavailable: " + e.getMessage());
         }
     }
 

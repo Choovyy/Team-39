@@ -14,7 +14,7 @@ import com.group2.SPEAR_Backend.Model.ProfileEntity;
 
 @RestController
 @RequestMapping("/api/survey")
-@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173", "https://capstoneconnect.netlify.app", "https://queueit39.netlify.app"}, allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173"}, allowCredentials = "true")
 public class SurveyController {
 
     @Autowired
@@ -49,16 +49,15 @@ public class SurveyController {
     // Convenience endpoint: fetch a user's stored survey (via profile) and call AI without client needing to send survey body
     @GetMapping("/match/user/{userId}")
     public ResponseEntity<?> getMatchesForUser(@PathVariable Integer userId) {
-        String requesterEmail = userRepository.findById(userId)
-                .map(u -> u.getEmail())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    userRepository.findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         ProfileEntity profile = profileRepository.findByUser_Uid(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found for user"));
         if (profile.getSurvey() == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User has not completed survey");
         }
         SurveyDTO surveyDTO = profile.getSurvey().toDTO();
-        return ResponseEntity.ok(surveyService.getMatchesFromAISystem(surveyDTO, requesterEmail));
+        return ResponseEntity.ok(surveyService.getMatchesFromAISystem(surveyDTO));
     }
 
 

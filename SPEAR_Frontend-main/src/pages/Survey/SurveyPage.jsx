@@ -2,7 +2,6 @@ import React, { useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../../services/AuthContext";
 import axios from "axios";
-import { API_BASE } from "../../services/apiBase";
 import "../../styles/Survey/SurveyPage.css";
 import group from "../../assets/imgs/group.jpg";
 
@@ -13,7 +12,8 @@ const SurveyPage = () => {
   useEffect(() => {
     // Only check if logged in and student
     if (authState?.isAuthenticated && authState?.role === "STUDENT" && authState?.uid) {
-      axios.get(`${API_BASE}/user/profile/${authState.uid}`)
+      const address = window.location.hostname;
+      axios.get(`http://${address}:8080/user/profile/${authState.uid}`)
         .then(resp => {
           // If not first-time user, redirect to dashboard
           if (resp.data && resp.data.firstTimeUser === false) {
@@ -63,5 +63,6 @@ const SurveyPage = () => {
     </section>
   );
 };
+
 export default SurveyPage;
 

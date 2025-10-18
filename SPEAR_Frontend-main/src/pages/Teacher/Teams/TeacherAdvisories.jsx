@@ -17,8 +17,14 @@ const TeacherAdvisories = () => {
   const [dropTeamId, setDropTeamId] = useState(null);
   const [dropReason, setDropReason] = useState("");
   const { getDecryptedId } = useContext(AuthContext);
-  const isProd = import.meta.env?.PROD;
-  const API_BASE = isProd ? '/spear' : (typeof window !== 'undefined' ? `http://${window.location.hostname}:8080` : 'http://localhost:8080');
+
+  const address = getIpAddress();
+
+  function getIpAddress() {
+    const hostname = window.location.hostname;
+    const indexOfColon = hostname.indexOf(":");
+    return indexOfColon !== -1 ? hostname.substring(0, indexOfColon) : hostname;
+  }
 
   useEffect(() => {
     const fetchAdvisoryTeams = async () => {
@@ -30,7 +36,7 @@ const TeacherAdvisories = () => {
 
       try {
         const response = await axios.get(
-          `${API_BASE}/teacher/teams/adviser/${authState.uid}`,
+          `http://${address}:8080/teacher/teams/adviser/${authState.uid}`,
           {
             headers: { Authorization: `Bearer ${authState.token}` },
           }
@@ -47,7 +53,7 @@ const TeacherAdvisories = () => {
     };
 
     fetchAdvisoryTeams();
-  }, [authState.uid, authState.token]);
+  }, [authState]);
 
   const handleViewProposals = (teamId) => {
     storeEncryptedId("tid", teamId);
@@ -77,7 +83,7 @@ const TeacherAdvisories = () => {
       const decryptedAdviserId = getDecryptedId("uid");
 
       const res = await axios.post(
-        `${API_BASE}/adviser-drop/team/${dropTeamId}`,
+        `http://${address}:8080/adviser-drop/team/${dropTeamId}`,
         {
           adviserId: decryptedAdviserId,
           reason: dropReason.trim(),
@@ -93,6 +99,8 @@ const TeacherAdvisories = () => {
       toast.error(err.response?.data?.error || "Failed to drop adviser.");
     } finally {
       setShowDropModal(false);
+      setDropReason("");
+      setDropTeamId(null);
     }
   };
 

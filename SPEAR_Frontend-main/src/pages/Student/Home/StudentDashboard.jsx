@@ -7,7 +7,6 @@ import ClassCard from "./ClassCard";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
-import { API_BASE } from "../../../services/apiBase";
 
 const StudentDashboard = () => {
   const { authState } = useContext(AuthContext);
@@ -19,7 +18,13 @@ const StudentDashboard = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [classesPerPage] = useState(6);
 
-  
+  const address = getIpAddress();
+
+  function getIpAddress() {
+      const hostname = window.location.hostname;
+      const indexOfColon = hostname.indexOf(':');
+      return indexOfColon !== -1 ? hostname.substring(0, indexOfColon) : hostname;
+  }
 
 
 
@@ -31,7 +36,7 @@ const StudentDashboard = () => {
 
         // Fetch enrolled classes
         const classesResponse = await axios.get(
-          `${API_BASE}/student/${authState.uid}/enrolled-classes`,
+          `http://${address}:8080/student/${authState.uid}/enrolled-classes`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -41,7 +46,7 @@ const StudentDashboard = () => {
 
         // Fetch student's name
         const profileResponse = await axios.get(
-          `${API_BASE}/user/profile/${authState.uid}`,
+          `http://${address}:8080/user/profile/${authState.uid}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -149,7 +154,7 @@ const StudentDashboard = () => {
         onEnroll={async (classKey) => {
           const token = localStorage.getItem("token");
           try {
-            const response = await fetch(`${API_BASE}/student/enroll`, {
+            const response = await fetch(`http://${address}:8080/student/enroll`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -164,7 +169,7 @@ const StudentDashboard = () => {
 
               // Fetch updated enrolled classes
               const updatedClassesResponse = await fetch(
-                `${API_BASE}/student/${authState.uid}/enrolled-classes`,
+                `http://${address}:8080/student/${authState.uid}/enrolled-classes`,
                 {
                   headers: { Authorization: `Bearer ${token}` },
                 }
