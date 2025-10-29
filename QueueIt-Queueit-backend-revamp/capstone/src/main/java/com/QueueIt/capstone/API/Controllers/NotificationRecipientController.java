@@ -10,7 +10,8 @@ import org.springframework.web.bind.annotation.*;
     "http://localhost:5173",
     "http://172.16.103.209:3000",
     "http://172.16.103.209:5173",
-    "http://172.16.103.209:8080"
+    "http://172.16.103.209:8080",
+    "https://queueit39.netlify.app"
 })
 @RequestMapping("/notificationsRecipient")
 public class NotificationRecipientController {
