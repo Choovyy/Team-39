@@ -13,8 +13,9 @@ import org.springframework.web.bind.annotation.*;
     "http://172.16.103.209:3000",
     "http://172.16.103.209:5173",
     "http://172.16.103.209:8080",
-    "https://queueit39.netlify.app"
-})
+    "https://queueit39.netlify.app",
+    "https://capstoneconnect.netlify.app"
+}, allowCredentials = "true")
 @RequestMapping("/queue")
 public class QueueingController {
 

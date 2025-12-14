@@ -15,14 +15,17 @@ import java.util.Map;
 @RestController
 @CrossOrigin(origins = {
         "http://localhost:5173",
+        "http://127.0.0.1:5173",
         "http://10.147.17.37:5173",
         "http://localhost:3000",
         "http://localhost",
         "http://localhost:8081",
         "http://172.16.103.209:3000",
         "http://172.16.103.209",
-        "http://172.16.103.209:8081"
-})
+        "http://172.16.103.209:8081",
+        "https://capstoneconnect.netlify.app",
+        "https://queueit39.netlify.app"
+}, allowCredentials = "true")
 public class ProjectProposalController {
 
     @Autowired
