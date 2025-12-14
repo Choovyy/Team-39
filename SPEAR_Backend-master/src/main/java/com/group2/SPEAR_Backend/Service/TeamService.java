@@ -294,6 +294,7 @@ public class TeamService {
 //                .toList();
 //    }
 
+    @Transactional
     public List<UserDTO> getStudentsWithoutTeam(Long classId) {
         Classes clazz = cRepo.findById(classId)
                 .orElseThrow(() -> new NoSuchElementException("Class not found"));

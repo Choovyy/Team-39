@@ -217,7 +217,7 @@ def get_top_matches(query_embedding, personality_embedding, exclude_email=None, 
                 logger.info(f"Project interests score: {project_interest_score} (matching: {len(set(user_interests).intersection(set(query_interests)))} out of {len(set(user_interests).union(set(query_interests)))})")
                 logger.info(f"Preferred roles score: {preferred_roles_score} (matching: {len(set(user_roles).intersection(set(query_roles)))} out of {len(set(user_roles).union(set(query_roles)))})")
 
-                # combine scores with new weighting: 35% skill, 25% preferred roles, 20% project interests, 20% personality
+                # combine scores with new weighting: 10% skills, 5% preferred roles, 5% project interests, 80% personality
                 overall_score = round(
                     skill_score * 0.10 +
                     preferred_roles_score * 0.05 +
